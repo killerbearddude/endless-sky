@@ -87,7 +87,7 @@ using namespace std;
 void PrintHelp();
 void PrintVersion();
 void GameLoop(PlayerInfo &player, TaskQueue &queue, const Conversation &conversation,
-	const string &testToRun, bool debugMode);
+	const string &testToRun, bool debugMode, bool uiProof);
 Conversation LoadConversation(const PlayerInfo &player);
 void PrintTestsTable();
 
@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
 	bool printTests = false;
 	bool printData = false;
 	bool noTestMute = false;
+	bool uiProof = false;
 	uint64_t nWorkerThreads = 0;
 	string testToRunName;
 
@@ -147,6 +148,8 @@ int main(int argc, char *argv[])
 			testToRunName = *it;
 		else if(arg == "--tests")
 			printTests = true;
+		else if(arg == "--ui-proof")
+			uiProof = true;
 		else if(arg == "--nomute")
 			noTestMute = true;
 		else if(arg == "--rngseed" && *++it)
@@ -263,7 +266,7 @@ int main(int argc, char *argv[])
 
 		CustomEvents::Init();
 		// This is the main loop where all the action begins.
-		GameLoop(player, queue, conversation, testToRunName, debugMode);
+		GameLoop(player, queue, conversation, testToRunName, debugMode, uiProof && !isTesting);
 	}
 	catch(Test::known_failure_tag)
 	{
@@ -292,7 +295,7 @@ int main(int argc, char *argv[])
 
 
 void GameLoop(PlayerInfo &player, TaskQueue &queue, const Conversation &conversation,
-		const string &testToRunName, bool debugMode)
+		const string &testToRunName, bool debugMode, bool uiProof)
 {
 	// gamePanels is used for the main panel where you fly your spaceship.
 	// All other game content related dialogs are placed on top of the gamePanels.
@@ -308,7 +311,7 @@ void GameLoop(PlayerInfo &player, TaskQueue &queue, const Conversation &conversa
 	// Whether the game data is done loading. This is used to trigger any
 	// tests to run.
 	bool dataFinishedLoading = false;
-	menuPanels.Push(new GameLoadingPanel(player, queue, conversation, gamePanels, dataFinishedLoading));
+	menuPanels.Push(new GameLoadingPanel(player, queue, conversation, gamePanels, dataFinishedLoading, uiProof));
 
 	bool showCursor = true;
 	int cursorTime = 0;
@@ -656,6 +659,7 @@ void PrintHelp()
 	cerr << "    --parse-assets: load all game data, images, and sounds,"
 		" and the latest save game, and inspect data for errors." << endl;
 	cerr << "    --tests: print table of available tests, then exit." << endl;
+	cerr << "    --ui-proof: show the opt-in native UI theme and input proof." << endl;
 	cerr << "    --test <name>: run given test from resources directory." << endl;
 	cerr << "    --nomute: don't mute the game while running tests." << endl;
 	cerr << "    --rng-seed <seed>: every time the pseudo-random number generator is seeded,"

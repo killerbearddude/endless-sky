@@ -31,7 +31,7 @@ class UI;
 class GameLoadingPanel final : public Panel {
 public:
 	GameLoadingPanel(PlayerInfo &player, TaskQueue &queue, const Conversation &conversation,
-		UI &gamePanels, bool &finishedLoading);
+		UI &gamePanels, bool &finishedLoading, bool uiProof);
 
 	void Step() final;
 	void Draw() final;
@@ -43,6 +43,7 @@ private:
 	const Conversation &conversation;
 	UI &gamePanels;
 	bool &finishedLoading;
+	bool uiProof;
 
 	double progress = 0;
 	LoadingCircle loadingCircle;

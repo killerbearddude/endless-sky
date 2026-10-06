@@ -361,6 +361,8 @@ target_sources(EndlessSkyLib PRIVATE
 	TradingPanel.h
 	UI.cpp
 	UI.h
+	UIProofPanel.cpp
+	UIProofPanel.h
 	UniverseObjects.cpp
 	UniverseObjects.h
 	Variant.cpp

@@ -25,6 +25,23 @@ color "dimmer" .18 .18 .18 0.
 color "faint" .1 .1 .1 0.
 color "dark" .05 .05 .05 0.
 
+# Additive UI semantic palette. Values are normalized reference sRGB channels;
+# existing color names retain their meanings and may still be overridden by plugins.
+color "ui/background" .047059 .058824 .066667 1.
+color "ui/panel" .078431 .098039 .113725 1.
+color "ui/raised" .113725 .145098 .168627 1.
+color "ui/hover" .152941 .2 .231373 1.
+color "ui/divider" .223529 .274510 .309804 1.
+color "ui/control border" .443137 .505882 .549020 1.
+color "ui/text primary" .909804 .933333 .949020 1.
+color "ui/text secondary" .658824 .709804 .749020 1.
+color "ui/text muted" .498039 .564706 .611765 1.
+color "ui/focus" .411765 .823529 .905882 1.
+color "ui/selected" .094118 .2 .235294 1.
+color "ui/positive" .529412 .788235 .603922 1.
+color "ui/caution" .901961 .709804 .4 1.
+color "ui/danger" .933333 .509804 .509804 1.
+
 # Colors used for drawing ship list in player info panel.
 color "flagship" .5 .5 .1 0.
 color "disabled" .5 .3 .1 0.

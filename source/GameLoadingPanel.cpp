@@ -29,15 +29,16 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "shader/StarField.h"
 #include "TaskQueue.h"
 #include "UI.h"
+#include "UIProofPanel.h"
 
 #include "opengl.h"
 
 
 
 GameLoadingPanel::GameLoadingPanel(PlayerInfo &player, TaskQueue &queue, const Conversation &conversation,
-	UI &gamePanels, bool &finishedLoading)
+	UI &gamePanels, bool &finishedLoading, bool uiProof)
 	: player(player), queue(queue), conversation(conversation), gamePanels(gamePanels),
-		finishedLoading(finishedLoading), loadingCircle(140.f, 60)
+		finishedLoading(finishedLoading), uiProof(uiProof), loadingCircle(140.f, 60)
 {
 	SetIsFullScreen(true);
 }
@@ -70,6 +71,8 @@ void GameLoadingPanel::Step()
 		{
 			GetUI().Push(new MenuPanel(player, gamePanels));
 			GetUI().Push(new MenuAnimationPanel());
+			if(uiProof)
+				GetUI().Push(new UIProofPanel());
 		}
 		else
 		{
