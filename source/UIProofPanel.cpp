@@ -46,6 +46,17 @@ namespace {
 		LineShader::Draw(r.BottomLeft(), r.TopLeft(), width, color);
 	}
 
+	class ProofEdit final : public Edit {
+	public:
+		void Draw() override
+		{
+			Edit::Draw();
+			if(Visible())
+				Border(Position(), Theme(HasFocus() ? "ui/focus" : "ui/control border"),
+					HasFocus() ? 2.f : 1.f);
+		}
+	};
+
 	class ProofPopup final : public Panel {
 	public:
 		explicit ProofPopup(function<void()> onClose) : onClose(move(onClose))
@@ -102,7 +113,7 @@ namespace {
 
 
 UIProofPanel::UIProofPanel()
-	: first(make_shared<Edit>()), second(make_shared<Edit>())
+	: first(make_shared<ProofEdit>()), second(make_shared<ProofEdit>())
 {
 	SetIsFullScreen(true);
 	SetInterruptible(false);
@@ -146,10 +157,6 @@ void UIProofPanel::Draw()
 	second->SetPosition(secondBounds);
 	font.Draw("FIRST FIELD", Point(left, firstBounds.Top() - 19), Theme("ui/text muted"));
 	font.Draw("SECOND FIELD", Point(left, secondBounds.Top() - 19), Theme("ui/text muted"));
-	Border(firstBounds, first->HasFocus() ? Theme("ui/focus") : Theme("ui/control border"),
-		first->HasFocus() ? 2.f : 1.f);
-	Border(secondBounds, second->HasFocus() ? Theme("ui/focus") : Theme("ui/control border"),
-		second->HasFocus() ? 2.f : 1.f);
 	if(first->HasFocus())
 		font.Draw("1", firstBounds.TopRight() + Point(-14, -17), Theme("ui/focus"));
 	if(second->HasFocus())

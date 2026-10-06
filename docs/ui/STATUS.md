@@ -86,3 +86,26 @@ The owner selected current `endless-sky/endless-sky:master` after it advanced 56
 **Native checks:** On a disposable Xvfb display and config directory, the proof rendered at 1280×800, at 1800×980, and at 1280×800 with 120% UI zoom. Screenshots are in `docs/ui/reference/`. At 1280×800, typing shortcut letters `bm` into the first focused field left the parent B count at zero. Tab moved focus to the second field and Shift+Tab returned it. Escape released field focus, then B incremented the parent count once. Clicking the drawn popup button opened the child panel; B was trapped while it was open, and Escape restored focus to the first field. On the final rebuilt binary, a click inside the popup left it open; a click outside closed it and restored first-field focus. With Xvfb key repeat enabled at 200 ms / 20 Hz, one held B generated 21 observed X11 keypress events and incremented the parent proof action only once. A long text entry stopped at the field's right edge with no overlap. The proof's selection/focus and status meanings have text or numbered indicators as well as color. Native captures verify this proof surface only, not Outfitter parity or an accessibility contrast audit.
 
 **Limits:** The content-plugin integration scenario passed, but it does not exercise a custom Outfitter category on this proof surface. A dedicated UI/color override fixture was not run; the new names use the existing plugin-overridable color map, and no existing named interface or legacy color was changed. The native popup and input proof are not a replacement for M1-B's real data, scrolling, and transaction boundary checks. Xvfb reported unsupported VSync and existing image-profile warnings; rendering and input continued. The first native screenshot taken with a centered Xvfb window showed an OpenGL/root-capture offset; moving the disposable window to display origin produced correctly bounded screenshots. A separate production display and human review remain useful before accepting the palette.
+
+## M1-A R1 correction and validation — October 6, 2026
+
+R1 starts from reviewed M1-A commit `584f475b17ac27e4255ebdf6fb7ff44aeaaed92e` on `codex/m1a-theme-layout-input-proof`. The correction is local to `UIProofPanel.cpp`: a proof-only `Edit` subclass draws its control/focus border after `Edit::Draw()` has filled the field. Its `Position()` is the single field rectangle for the Edit surface, pointer hit test, and final border. The parent retains the numbered focus indicator, so focus is not conveyed by color alone. Shared `Edit`, `Panel`, `UI`, startup, ShopPanel, gameplay, palette, and plugin code are unchanged by R1.
+
+The corrected Debug build passed with:
+
+```sh
+LD_LIBRARY_PATH=/tmp/endless-sky-m1a-deps/usr/lib/x86_64-linux-gnu \
+LIBRARY_PATH=/tmp/endless-sky-m1a-deps/usr/lib/x86_64-linux-gnu \
+  cmake --build /tmp/endless-sky-m1a-build -j 4
+```
+
+The unit target passed **1/1** using `LD_LIBRARY_PATH=/tmp/endless-sky-m1a-deps/usr/lib/x86_64-linux-gnu ctest --test-dir /tmp/endless-sky-m1a-build --output-on-failure -L '^unit$'`. The current corrected build discovered **45 normal integration scenarios**. The complete group passed **45/45, 0 failed** in 1022.27 seconds with:
+
+```sh
+LD_LIBRARY_PATH=/tmp/endless-sky-m1a-deps/usr/lib/x86_64-linux-gnu \
+  ctest --test-dir /tmp/endless-sky-m1a-build --output-on-failure -L '^integration$' -j 1
+```
+
+The native proof was relaunched with `--ui-proof`, source resources, and a disposable config. Replacement captures under `docs/ui/reference/` show the final focus border and inactive border at 1280×800, 1800×980, and 1280×800 with 120% UI zoom. The borders stay aligned with their fields; center-pixel samples from all 14 palette swatches match the prior 1280×800 capture. At 1280×800, clicks just inside and outside the first field's left edge respectively set and released focus. Typing `bm` in the focused field did not increment the parent B count; Tab, Shift+Tab, Escape, popup B trapping and dismissal, and focus restoration passed. With Xvfb repeat at 200 ms / 20 Hz, one held B generated 21 observed X11 keypress events and exactly one additional parent proof action. These checks demonstrate the opt-in proof surface, not human palette acceptance or gameplay parity.
+
+No R1-specific automated test was added. The 45 debug/interactive integration variants and benchmark target were not run for R1. M0 results above remain historical evidence from the older baseline; R1 does not reinterpret them. The existing M1-B and later-milestone unknowns remain separate from this correction.
