@@ -413,8 +413,22 @@ void ReadOnlyOutfitterPanel::DrawDetails(const Rectangle &bounds)
 	WrappedText description(font);
 	description.SetWrapWidth(max(80, static_cast<int>(width)));
 	description.Wrap(selected->Description());
+	// Draw factual fitting data locally: OutfitInfoDisplay's requirements panel
+	// also includes a depreciation-derived transaction price.
+	vector<pair<string, string>> fittingData;
+	for(const string &license : selected->Licenses())
+		if(!player.HasLicense(license))
+			fittingData.emplace_back("license needed:", license);
+	if(selected->Mass())
+		fittingData.emplace_back("mass:", Format::Number(selected->Mass()));
+	if(selected->Get("required crew") > 0.)
+		fittingData.emplace_back("required crew:", Format::Number(selected->Get("required crew")));
+	for(const auto &[name, value] : *selected)
+		if(value < 0. && name != "required crew")
+			fittingData.emplace_back(name + ":", OutfitInfoDisplay::FormatAttribute(name, value));
+	const double fittingHeight = fittingData.empty() ? 0. : 32. + 20. * fittingData.size();
 	OutfitInfoDisplay info(*selected, player, false, false);
-	const double contentHeight = 322 + description.Height() + info.RequirementsHeight() + info.AttributesHeight();
+	const double contentHeight = 322 + description.Height() + fittingHeight + info.AttributesHeight();
 	detailScroll.SetDisplaySize(viewport.Height());
 	detailScroll.SetMaxValue(contentHeight);
 	const double offset = detailScroll.Value();
@@ -473,8 +487,21 @@ void ReadOnlyOutfitterPanel::DrawDetails(const Rectangle &bounds)
 		y += 12;
 	description.Draw(Point(x, y), Theme("ui/text primary"));
 	y += description.Height() + 8;
-	info.DrawRequirements(Point(x, y));
-	y += info.RequirementsHeight();
+	if(!fittingData.empty())
+	{
+		font.Draw("FITTING DATA", Point(x, y), Theme("ui/text secondary"));
+		y += 24;
+		for(const auto &[label, value] : fittingData)
+		{
+			const double valueWidth = min(width * .46, static_cast<double>(font.Width(value) + 2));
+			font.Draw({label, {static_cast<int>(width - valueWidth - 8), Alignment::LEFT, Truncate::BACK}},
+				Point(x, y), Theme("ui/text secondary"));
+			font.Draw({value, {static_cast<int>(valueWidth), Alignment::RIGHT, Truncate::MIDDLE}},
+				Point(x + width - valueWidth, y), Theme("ui/text primary"));
+			y += 20;
+		}
+		y += 8;
+	}
 	info.DrawAttributes(Point(x, y));
 	EndClip();
 }
