@@ -241,6 +241,8 @@ target_sources(EndlessSkyLib PRIVATE
 	OutfitInfoDisplay.h
 	OutfitterPanel.cpp
 	OutfitterPanel.h
+	ReadOnlyOutfitterPanel.cpp
+	ReadOnlyOutfitterPanel.h
 	Panel.cpp
 	Panel.h
 	Paragraphs.cpp

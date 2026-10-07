@@ -1,0 +1,22 @@
+# Disposable M1-B content fixture. Loaded only in an isolated config.
+category "outfit"
+	"M1B Field Equipment"
+
+outfit "M1B Survey Resonator"
+	category "M1B Field Equipment"
+	cost 12345
+	thumbnail "outfit/harvested aluminum"
+	"mass" 2
+	"m1b field resonance" 7
+	description "A deliberately long plugin description for checking the generic catalog and detail pane. This instrument records faint signals from the surrounding system and retains the measurements for later review. Its custom field resonance attribute has no category-specific column and must not be converted into an invented energy or heat claim."
+
+outfit "M1B Experimental Survey Resonator with an Exceptionally Long Plugin-Defined Display Name That Continues Beyond the Available Catalog Row Width and Must Be Truncated Before Its Price Column"
+	category "M1B Field Equipment"
+	cost 54321
+	thumbnail "outfit/harvested aluminum"
+	"mass" 3
+	description "A long outfit name fixture for verifying that the native list and detail title truncate without covering the price, source controls, or navigation."
+
+outfitter "Remnant Core"
+	add "M1B Survey Resonator"
+	add "M1B Experimental Survey Resonator with an Exceptionally Long Plugin-Defined Display Name That Continues Beyond the Available Catalog Row Width and Must Be Truncated Before Its Price Column"

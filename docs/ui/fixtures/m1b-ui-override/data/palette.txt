@@ -1,0 +1,2 @@
+# Disposable M1-B palette override fixture. Loaded only in an isolated config.
+color "ui/focus" .95 .20 .75 1.

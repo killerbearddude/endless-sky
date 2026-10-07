@@ -1,0 +1,47 @@
+# M1-B keyboard entry and state guard. The native catalog is a browsing surface;
+# these game conditions must be unchanged while it owns input.
+test "M1B Read Only Outfitter"
+	status active
+	sequence
+		inject "Shipyard Outfitter Mission Save"
+		call "Load First Savegame"
+		assert
+			"credits" == 100000000
+			"flagship crew" == 1
+			"ship model (all): Star Barge" == 1
+			"outfit (flagship installed): Hyperdrive" == 1
+			"outfit (cargo): Hyperdrive" == 0
+			"outfit (storage): Hyperdrive" == 0
+		input
+			key o
+				control
+				shift
+		input
+			key down
+		input
+			key up
+		input
+			key right
+		input
+			key left
+		input
+			key "]"
+		input
+			key "["
+		input
+			key s
+		input
+			key h
+		input
+			key b
+		input
+			key m
+		assert
+			"credits" == 100000000
+			"flagship crew" == 1
+			"ship model (all): Star Barge" == 1
+			"outfit (flagship installed): Hyperdrive" == 1
+			"outfit (cargo): Hyperdrive" == 0
+			"outfit (storage): Hyperdrive" == 0
+		input
+			key escape
