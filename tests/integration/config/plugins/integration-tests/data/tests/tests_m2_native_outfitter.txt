@@ -1,0 +1,1102 @@
+# Characterize the unchanged native Outfitter before M2 changes its execution path.
+# These fixtures are loaded only by the disposable integration-test config.
+category "outfit"
+	"M2 Test Equipment"
+
+outfit "M2 Test Module"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" -1
+	description "A fixture for native Outfitter transfer characterization."
+
+outfit "M2 Crew Pod"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" -1
+	"required crew" 1
+
+outfit "M2 Permit License"
+	category "M2 Test Equipment"
+	cost 200
+
+outfit "M2 Licensed Module"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" -1
+	licenses
+		"M2 Permit"
+
+outfit "M2 Survey Map"
+	category "M2 Test Equipment"
+	cost 200
+	"map" 1
+
+outfit "M2 Linked Rack"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" 5
+	linked "M2 Linked Payload"
+
+outfit "M2 Linked Payload"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" -5
+
+outfit "M2 Ammo Rack"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" -1
+	"m2 ammo capacity" 3
+	ammo "M2 Test Ammo"
+
+outfit "M2 Test Ammo"
+	category "M2 Test Equipment"
+	cost 100
+	mass .1
+	"m2 ammo capacity" -1
+
+outfitter "M2 Native Shop"
+	"M2 Test Module"
+	"M2 Crew Pod"
+	"M2 Permit License"
+	"M2 Licensed Module"
+	"M2 Survey Map"
+	"M2 Linked Rack"
+	"M2 Linked Payload"
+
+test-data "M2 Native Single Ship Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+
+test "M2 Native Single Ship Routes"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			key o
+		input
+			outfit "M2 Test Module"
+		input
+			key b
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		# Ship -> cargo, then cargo -> storage and storage -> cargo.
+		input
+			key u
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		input
+			key r
+		assert
+			"outfit (cargo): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			key c
+		assert
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		# Cargo -> ship; selling falls through empty cargo/storage to ship -> shop.
+		input
+			key i
+		assert
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			key s
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		# Empty storage falls through to shop -> cargo, then cargo -> shop.
+		input
+			key c
+		assert
+			"credits" == 99999000
+			"outfit (cargo): M2 Test Module" == 1
+		input
+			key s
+		assert
+			"credits" == 100000000
+			"outfit (cargo): M2 Test Module" == 0
+		# Empty cargo/ships fall through to shop -> storage. Empty cargo then
+		# falls through to storage -> ship. Finally ship -> storage, then storage -> shop.
+		input
+			key r
+		assert
+			"credits" == 99999000
+			"outfit (storage): M2 Test Module" == 1
+		input
+			key i
+		assert
+			"outfit (storage): M2 Test Module" == 0
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			key r
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			key s
+		assert
+			"credits" == 100000000
+			"outfit (storage): M2 Test Module" == 0
+		input
+			key escape
+
+
+# Additional disposable saves share the same native shop and outfit definition.
+
+test-data "M2 Native Two Ship Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		ship "Star Barge"
+			name "Escort Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+test-data "M2 Native Mixed Fleet Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		ship "Star Barge"
+			name "Escort Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 0
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+test-data "M2 Native Limited Capacity Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 2
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+test-data "M2 Native Limited Credits Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 1500
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+test-data "M2 Native No Credits Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 500
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+
+test "M2 Native Two Ship Quantity"
+	status active
+	sequence
+		inject "M2 Native Two Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 3 all
+		input
+			key b
+		assert
+			"credits" == 99994000
+			"outfit (flagship installed): M2 Test Module" == 3
+			"outfit (all installed): M2 Test Module" == 6
+
+
+test "M2 Native Mixed Fleet Partial"
+	status active
+	sequence
+		inject "M2 Native Mixed Fleet Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 3 all
+		input
+			key b
+		assert
+			"credits" == 99997000
+			"outfit (flagship installed): M2 Test Module" == 3
+			"outfit (all installed): M2 Test Module" == 3
+
+
+test "M2 Native Capacity Partial"
+	status active
+	sequence
+		inject "M2 Native Limited Capacity Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 5
+		input
+			key b
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+
+
+test "M2 Native Credits Partial"
+	status active
+	sequence
+		inject "M2 Native Limited Credits Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 5
+		input
+			key b
+		assert
+			"credits" == 500
+			"outfit (flagship installed): M2 Test Module" == 1
+
+
+test "M2 Native Insufficient Credits"
+	status active
+	sequence
+		inject "M2 Native No Credits Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 5
+		input
+			key b
+		assert
+			"credits" == 500
+			"outfit (flagship installed): M2 Test Module" == 0
+
+
+# The marker keeps Outfitter access open; the test module is available only
+# through two player-owned units of local stock.
+outfit "M2 Shop Marker"
+	category "M2 Test Equipment"
+	cost 10
+	mass 1
+	"outfit space" -1
+
+outfitter "M2 Marker Shop"
+	"M2 Shop Marker"
+
+test-data "M2 Native Finite Stock Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		stock
+			"M2 Test Module" 2
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Marker Shop"
+
+
+
+test "M2 Native Finite Stock Partial"
+	status active
+	sequence
+		inject "M2 Native Finite Stock Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 5
+		input
+			key b
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+			"outfit (all): M2 Test Module" == 2
+
+
+test-data "M2 Native Exact Fit Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 1
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			outfits
+				"M2 Test Module"
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+test-data "M2 Native Linked Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 0
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			outfits
+				"M2 Linked Rack"
+				"M2 Linked Payload"
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+# Native validation accepts the exact-fit cargo destination, then the ship
+# uninstall branch uses a strict > comparison and stores the outfit instead.
+test "M2 Native Exact Fit Uninstall"
+	status active
+	sequence
+		inject "M2 Native Exact Fit Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module"
+		input
+			key u
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+
+
+test "M2 Native Crew Change"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Crew Pod"
+		input
+			key b
+		assert
+			"flagship crew" == 2
+			"outfit (flagship installed): M2 Crew Pod" == 1
+		input
+			key u
+		assert
+			"flagship crew" == 1
+			"outfit (flagship installed): M2 Crew Pod" == 0
+			"outfit (cargo): M2 Crew Pod" == 1
+
+
+test "M2 Native Linked Removal"
+	status active
+	sequence
+		inject "M2 Native Linked Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Linked Rack"
+		input
+			key u
+		assert
+			"outfit (flagship installed): M2 Linked Rack" == 0
+			"outfit (flagship installed): M2 Linked Payload" == 0
+			"outfit (cargo): M2 Linked Rack" == 1
+			"outfit (cargo): M2 Linked Payload" == 1
+
+
+test "M2 Native Map Purchase"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"visited system: Over the Rainbow" == 0
+		input
+			key o
+		input
+			outfit "M2 Survey Map"
+		input
+			key b
+		assert
+			"credits" == 99999800
+			"visited system: Over the Rainbow" == 1
+			"outfit (all): M2 Survey Map" == 0
+
+
+test "M2 Native License Purchase"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"license: M2 Permit" == 0
+		input
+			key o
+		input
+			outfit "M2 Permit License"
+		input
+			key b
+		assert
+			"credits" == 99999800
+			"license: M2 Permit" == 1
+			"outfit (all): M2 Permit License" == 0
+
+
+test "M2 Native Required License Purchase"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Licensed Module"
+		input
+			key b
+		assert
+			"credits" == 99998800
+			"license: M2 Permit" == 1
+			"outfit (flagship installed): M2 Licensed Module" == 1
+
+
+test-data "M2 Native Refill Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			outfits
+				"M2 Ammo Rack"
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		cargo
+			outfits
+				"M2 Test Ammo" 1
+		storage
+			planet Ruin
+				cargo
+					outfits
+						"M2 Test Ammo" 2
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+
+test "M2 Native Save Reload"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 2
+		input
+			key b
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+		input
+			key escape
+		call "Open Menu"
+		call "Load First Savegame"
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+		input
+			key o
+		input
+			outfit "M2 Test Module"
+		input
+			key s
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+
+
+test "M2 Native Refill From Owned Holds"
+	status active
+	sequence
+		inject "M2 Native Refill Save"
+		call "Load First Savegame"
+		assert
+			"outfit (flagship installed): M2 Test Ammo" == 0
+			"outfit (cargo): M2 Test Ammo" == 1
+			"outfit (storage): M2 Test Ammo" == 2
+		input
+			key o
+		# The default integration preference asks before refilling.
+		input
+			key return
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Ammo" == 3
+			"outfit (cargo): M2 Test Ammo" == 0
+			"outfit (storage): M2 Test Ammo" == 0
+
+
+test-data "M2 Outfitter Entry Mission"
+	category mission
+	contents
+		mission "M2 OUTFITTER ENTRY"
+			outfitter
+			source Ruin
+			to offer
+				has "m2 outfitter entry enabled"
+			on offer
+				"m2 outfitter offer count" ++
+				conversation
+					`M2 Outfitter entry characterization.`
+						decline
+			on decline
+				"m2 outfitter decline count" ++
+
+
+test "M2 Native Mission Entry Return"
+	status active
+	sequence
+		inject "M2 Outfitter Entry Mission"
+		inject "Shipyard Outfitter Mission Save"
+		call "Load First Savegame"
+		apply
+			"m2 outfitter entry enabled" = 1
+		call "Trigger Outfitter Mission"
+		call "Skip Mission"
+		assert
+			"m2 outfitter offer count" == 1
+			"m2 outfitter decline count" == 1
+		input
+			key escape
+		input
+			key o
+		assert
+			"m2 outfitter offer count" == 1
+			"m2 outfitter decline count" == 1

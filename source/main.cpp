@@ -610,7 +610,7 @@ void GameLoop(PlayerInfo &player, TaskQueue &queue, const Conversation &conversa
 					const Test *runningTest = testContext.CurrentTest();
 					assert(runningTest && "no running test while running an integration test?");
 					Command command;
-					runningTest->Step(testContext, player, command);
+					runningTest->Step(testContext, player, gamePanels, command);
 
 					// Send any commands to the engine, if it is active.
 					if(menuPanels.IsEmpty())

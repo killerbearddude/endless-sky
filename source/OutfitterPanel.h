@@ -49,6 +49,7 @@ public:
 
 public:
 	OutfitterPanel(PlayerInfo &player, const Sale<Outfit> &stock);
+	bool SelectOutfitForTest(const std::string &name, int quantity, bool allShips) override;
 
 	virtual void Step() override;
 

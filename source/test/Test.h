@@ -101,6 +101,9 @@ public:
 		// Input variables.
 		Command command;
 		std::set<std::string> inputKeys;
+		std::string outfitToSelect;
+		int outfitQuantity = 1;
+		bool outfitAllShips = false;
 		Uint16 modKeys = 0;
 
 		// Mouse/Pointer input variables.
@@ -119,7 +122,7 @@ public:
 	std::set<std::string> RelevantConditions() const;
 
 	// Check the game status and perform the next test action.
-	void Step(TestContext &context, PlayerInfo &player, Command &commandToGive) const;
+	void Step(TestContext &context, PlayerInfo &player, UI &gamePanels, Command &commandToGive) const;
 
 	void Load(const DataNode &node, const ConditionsStore *playerConditions);
 

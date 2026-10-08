@@ -130,6 +130,25 @@ OutfitterPanel::OutfitterPanel(PlayerInfo &player, const Sale<Outfit> &stock)
 
 
 
+bool OutfitterPanel::SelectOutfitForTest(const string &name, int quantity, bool allShips)
+{
+	const Outfit *outfit = GameData::Outfits().Find(name);
+	if(!outfit || !HasItem(name) || quantity <= 0)
+		return false;
+	selectedOutfit = outfit;
+	selectedQuantity->SetText(to_string(quantity));
+	if(allShips)
+	{
+		playerShips.clear();
+		for(const auto &ship : player.Ships())
+			if(ship && ship->GetPlanet() == planet)
+				playerShips.insert(ship.get());
+	}
+	return true;
+}
+
+
+
 void OutfitterPanel::Step()
 {
 	CheckRefill();

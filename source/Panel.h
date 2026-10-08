@@ -63,6 +63,9 @@ public:
 
 	// Draw this panel.
 	virtual void Draw() = 0;
+	// Headless integration tests cannot build draw-time shop selection zones.
+	// Panels that support semantic test selection may override this hook.
+	virtual bool SelectOutfitForTest(const std::string &, int, bool) { return false; }
 
 	// Return true if this is a full-screen panel, so there is no point in
 	// drawing any of the panels under it.

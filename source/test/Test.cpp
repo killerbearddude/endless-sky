@@ -14,11 +14,13 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "Test.h"
+#include "../UI.h"
 
 #include "../DataNode.h"
 #include "../text/Format.h"
 #include "../GameData.h"
 #include "../Logger.h"
+#include "../Panel.h"
 #include "../Planet.h"
 #include "../PlayerInfo.h"
 #include "../Ship.h"
@@ -154,6 +156,14 @@ void Test::TestStep::LoadInput(const DataNode &node)
 				else
 					grand.PrintTrace("Skipping unrecognized attribute:");
 			}
+		}
+		else if(key == "outfit" && child.Size() >= 2 && child.Size() <= 4)
+		{
+			outfitToSelect = child.Token(1);
+			if(child.Size() >= 3)
+				outfitQuantity = child.Value(2);
+			if(child.Size() == 4)
+				outfitAllShips = child.Token(3) == "all";
 		}
 		else if(key == "pointer")
 		{
@@ -414,7 +424,7 @@ Test::Status Test::GetStatus() const
 
 
 // Check the game status and perform the next test action.
-void Test::Step(TestContext &context, PlayerInfo &player, Command &commandToGive) const
+void Test::Step(TestContext &context, PlayerInfo &player, UI &gamePanels, Command &commandToGive) const
 {
 	// Only run tests once all data has been loaded.
 	if(!GameData::IsLoaded())
@@ -515,6 +525,10 @@ void Test::Step(TestContext &context, PlayerInfo &player, Command &commandToGive
 				++(context.callstack.back().step);
 				break;
 			case TestStep::Type::INPUT:
+				if(!stepToRun.outfitToSelect.empty()
+						&& (!gamePanels.Top() || !gamePanels.Top()->SelectOutfitForTest(stepToRun.outfitToSelect,
+							stepToRun.outfitQuantity, stepToRun.outfitAllShips)))
+					Fail(context, player, "cannot select Outfitter outfit \"" + stepToRun.outfitToSelect + "\"");
 				if(stepToRun.command)
 					commandToGive |= stepToRun.command;
 				if(!stepToRun.inputKeys.empty())
