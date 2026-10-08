@@ -17,6 +17,21 @@ outfit "M2 Crew Pod"
 	"outfit space" -1
 	"required crew" 1
 
+outfit "M2 Recharge Cell"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 1
+	"outfit space" -1
+	"energy capacity" 100
+	"energy generation" 1
+
+outfit "M2 Cargo Extension"
+	category "M2 Test Equipment"
+	cost 1000
+	mass 2
+	"outfit space" -10
+	"cargo space" 10
+
 outfit "M2 Permit License"
 	category "M2 Test Equipment"
 	cost 200
@@ -33,6 +48,12 @@ outfit "M2 Survey Map"
 	category "M2 Test Equipment"
 	cost 200
 	"map" 1
+
+outfit "M2 Survey Minable Map"
+	category "M2 Test Equipment"
+	cost 200
+	"map" 1
+	"map minables" 1
 
 outfit "M2 Linked Rack"
 	category "M2 Test Equipment"
@@ -63,10 +84,15 @@ outfit "M2 Test Ammo"
 
 outfitter "M2 Native Shop"
 	"M2 Test Module"
+	"Meteor Missile Pod"
+	"Meteor Missile"
 	"M2 Crew Pod"
+	"M2 Recharge Cell"
+	"M2 Cargo Extension"
 	"M2 Permit License"
 	"M2 Licensed Module"
 	"M2 Survey Map"
+	"M2 Survey Minable Map"
 	"M2 Linked Rack"
 	"M2 Linked Payload"
 
@@ -561,7 +587,11 @@ test "M2 Native Two Ship Quantity"
 		input
 			outfit "M2 Test Module" 3 all
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99994000
 			"outfit (flagship installed): M2 Test Module" == 3
@@ -578,7 +608,11 @@ test "M2 Native Mixed Fleet Partial"
 		input
 			outfit "M2 Test Module" 3 all
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99997000
 			"outfit (flagship installed): M2 Test Module" == 3
@@ -595,7 +629,11 @@ test "M2 Native Capacity Partial"
 		input
 			outfit "M2 Test Module" 5
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99998000
 			"outfit (flagship installed): M2 Test Module" == 2
@@ -611,7 +649,11 @@ test "M2 Native Credits Partial"
 		input
 			outfit "M2 Test Module" 5
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 500
 			"outfit (flagship installed): M2 Test Module" == 1
@@ -711,7 +753,11 @@ test "M2 Native Finite Stock Partial"
 		input
 			outfit "M2 Test Module" 5
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99998000
 			"outfit (flagship installed): M2 Test Module" == 2
@@ -843,7 +889,11 @@ test "M2 Native Exact Fit Uninstall"
 		input
 			outfit "M2 Test Module"
 		input
+			preview ship cargo
+		input
 			key u
+		input
+			verify preview
 		assert
 			"outfit (flagship installed): M2 Test Module" == 0
 			"outfit (cargo): M2 Test Module" == 0
@@ -860,7 +910,11 @@ test "M2 Native Crew Change"
 		input
 			outfit "M2 Crew Pod"
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"flagship crew" == 2
 			"outfit (flagship installed): M2 Crew Pod" == 1
@@ -882,7 +936,11 @@ test "M2 Native Linked Removal"
 		input
 			outfit "M2 Linked Rack"
 		input
+			preview ship cargo
+		input
 			key u
+		input
+			verify preview
 		assert
 			"outfit (flagship installed): M2 Linked Rack" == 0
 			"outfit (flagship installed): M2 Linked Payload" == 0
@@ -902,7 +960,11 @@ test "M2 Native Map Purchase"
 		input
 			outfit "M2 Survey Map"
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99999800
 			"visited system: Over the Rainbow" == 1
@@ -921,7 +983,11 @@ test "M2 Native License Purchase"
 		input
 			outfit "M2 Permit License"
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99999800
 			"license: M2 Permit" == 1
@@ -938,7 +1004,11 @@ test "M2 Native Required License Purchase"
 		input
 			outfit "M2 Licensed Module"
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99998800
 			"license: M2 Permit" == 1
@@ -1020,7 +1090,11 @@ test "M2 Native Save Reload"
 		input
 			outfit "M2 Test Module" 2
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99998000
 			"outfit (flagship installed): M2 Test Module" == 2
@@ -1333,7 +1407,11 @@ test "M2 Native Licensed Outfit With Held License"
 		input
 			outfit "M2 Licensed Module"
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99999000
 			"license: M2 Permit" == 1
@@ -1353,7 +1431,11 @@ test "M2 Native Unequal Fleet Allocation"
 		input
 			outfit "M2 Test Module" 1 all
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 99999000
 			"outfit (flagship installed): M2 Test Module" == 1
@@ -1370,7 +1452,11 @@ test "M2 Native Depreciated Stock Order"
 		input
 			outfit "M2 Test Module" 2
 		input
+			preview shop ship
+		input
 			key b
+		input
+			verify preview
 		assert
 			"credits" == 850
 			"outfit (flagship installed): M2 Test Module" == 1
@@ -1379,3 +1465,868 @@ test "M2 Native Depreciated Stock Order"
 		assert
 			"credits" == 1100
 			"outfit (flagship installed): M2 Test Module" == 0
+
+
+test "M2 Preview Single Ship Buy"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 2
+		input
+			preview shop ship
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		input
+			key b
+		input
+			verify preview
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+
+
+test "M2 Preview Single Ship Routes"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			key o
+		input
+			outfit "M2 Test Module"
+		input
+			preview shop ship
+		input
+			key b
+		input
+			verify preview
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		# Ship -> cargo, then cargo -> storage and storage -> cargo.
+		input
+			preview ship cargo
+		input
+			key u
+		input
+			verify preview
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		input
+			preview cargo storage
+		input
+			key r
+		input
+			verify preview
+		assert
+			"outfit (cargo): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			preview storage cargo
+		input
+			key c
+		input
+			verify preview
+		assert
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		# Cargo -> ship; selling falls through empty cargo/storage to ship -> shop.
+		input
+			preview cargo ship
+		input
+			key i
+		input
+			verify preview
+		assert
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			preview ship shop
+		input
+			key s
+		input
+			verify preview
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		# Empty storage falls through to shop -> cargo, then cargo -> shop.
+		input
+			preview shop cargo
+		input
+			key c
+		input
+			verify preview
+		assert
+			"credits" == 99999000
+			"outfit (cargo): M2 Test Module" == 1
+		input
+			preview cargo shop
+		input
+			key s
+		input
+			verify preview
+		assert
+			"credits" == 100000000
+			"outfit (cargo): M2 Test Module" == 0
+		# Empty cargo/ships fall through to shop -> storage. Empty cargo then
+		# falls through to storage -> ship. Finally ship -> storage, then storage -> shop.
+		input
+			preview shop storage
+		input
+			key r
+		input
+			verify preview
+		assert
+			"credits" == 99999000
+			"outfit (storage): M2 Test Module" == 1
+		input
+			preview storage ship
+		input
+			key i
+		input
+			verify preview
+		assert
+			"outfit (storage): M2 Test Module" == 0
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			preview ship storage
+		input
+			key r
+		input
+			verify preview
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			preview storage shop
+		input
+			key s
+		input
+			verify preview
+		assert
+			"credits" == 100000000
+			"outfit (storage): M2 Test Module" == 0
+		input
+			key escape
+
+
+test "M2 Preview Commit"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module" 2
+		input
+			preview shop ship
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		input
+			commit preview
+		input
+			verify preview
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+
+
+test "M2 Preview Stale Reject"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Test Module"
+		input
+			preview shop ship
+		input
+			key b
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			expect stale preview
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+
+
+test "M2 Modern Explicit Buy"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module" 2
+		input
+			key return
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+
+
+test "M2 Modern Native Shortcut Fallback"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module"
+		input
+			key b
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			key u
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 1
+
+
+test "M2 Modern Keyboard Route"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module"
+		input
+			key return
+		assert
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			key g
+		input
+			key t
+		input
+			key return
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 1
+
+
+test "M2 Modern Multi-Ship Buy"
+	status active
+	sequence
+		inject "M2 Native Two Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module" 3 all
+		input
+			key return
+		assert
+			"credits" == 99994000
+			"outfit (flagship installed): M2 Test Module" == 3
+			"outfit (all installed): M2 Test Module" == 6
+
+
+test "M2 Modern Escort Group Selection"
+	status active
+	sequence
+		inject "M2 Native Two Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module" 3
+		input
+			key h
+		input
+			key 1
+				control
+		input
+			key h
+		input
+			key 1
+		input
+			key return
+		assert
+			"credits" == 99997000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (all installed): M2 Test Module" == 3
+
+
+test "M2 Modern Save Reload"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module" 2
+		input
+			key return
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+		input
+			key escape
+		call "Open Menu"
+		call "Load First Savegame"
+		assert
+			"credits" == 99998000
+			"outfit (flagship installed): M2 Test Module" == 2
+
+
+test "M2 Modern Mission Entry Return"
+	status active
+	sequence
+		inject "M2 Outfitter Entry Mission"
+		inject "Shipyard Outfitter Mission Save"
+		call "Load First Savegame"
+		apply
+			"m2 outfitter entry enabled" = 1
+		call "Depart"
+		navigate
+			"travel destination" Ruin
+		call "Land"
+		input
+			key o
+				control
+				alt
+		call "Skip Mission"
+		assert
+			"m2 outfitter offer count" == 1
+			"m2 outfitter decline count" == 1
+		input
+			key escape
+		input
+			key o
+				control
+				alt
+		assert
+			"m2 outfitter offer count" == 1
+			"m2 outfitter decline count" == 1
+
+
+test "M2 Modern Disabled Purchase"
+	status active
+	sequence
+		inject "M2 Native No Credits Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module"
+		input
+			key return
+		assert
+			"credits" == 500
+			"outfit (flagship installed): M2 Test Module" == 0
+
+
+test "M2 Modern Find Focus"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module"
+		input
+			key f
+		input
+			key b
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		input
+			key tab
+		input
+			key b
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+
+
+test "M2 Modern Map Purchase"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"visited system: Over the Rainbow" == 0
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Survey Map"
+		input
+			key return
+		assert
+			"credits" == 99999800
+			"visited system: Over the Rainbow" == 1
+			"outfit (all): M2 Survey Map" == 0
+
+
+test "M2 Modern Minable Map Purchase"
+	status active
+	sequence
+		inject "M2 Native Minable Map Save"
+		call "Load First Savegame"
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Survey Minable Map"
+		input
+			preview shop ship
+		input
+			expect preview harvested
+		input
+			key return
+		input
+			verify preview
+		assert
+			"credits" == 99999800
+			"visited system: Over the Rainbow" == 1
+			"outfit (all): M2 Survey Minable Map" == 0
+
+
+test-data "M2 Native Weapon Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"gun ports" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			gun -7 -10
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+
+
+
+test "M2 Preview Weapon Ammo And Linked Removal"
+	status active
+	sequence
+		inject "M2 Native Weapon Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "Meteor Missile Pod"
+		input
+			preview shop ship
+		input
+			key b
+		input
+			verify preview
+		assert
+			"credits" == 99995000
+			"outfit (flagship installed): Meteor Missile Pod" == 1
+		input
+			outfit "Meteor Missile" 3
+		input
+			preview shop ship
+		input
+			key b
+		input
+			verify preview
+		assert
+			"credits" == 99993500
+			"outfit (flagship installed): Meteor Missile" == 3
+		input
+			outfit "Meteor Missile Pod"
+		input
+			preview ship cargo
+		input
+			key u
+		input
+			verify preview
+		assert
+			"outfit (flagship installed): Meteor Missile Pod" == 0
+			"outfit (flagship installed): Meteor Missile" == 0
+			"outfit (cargo): Meteor Missile Pod" == 1
+			"outfit (cargo): Meteor Missile" == 3
+
+
+test "M2 Preview Recharge"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		input
+			key o
+		input
+			outfit "M2 Recharge Cell"
+		input
+			preview shop ship
+		input
+			key b
+		input
+			verify preview
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Recharge Cell" == 1
+			"flagship attribute: energy capacity" == 100000
+			"flagship attribute: energy generation" == 1000
+
+
+test "M2 Modern Cargo Capacity Preview"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"flagship: cargo space" == 50
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Cargo Extension"
+		input
+			preview shop ship
+		input
+			key return
+		input
+			verify preview
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Cargo Extension" == 1
+			"flagship: cargo space" == 60
+
+
+test "M2 Modern Shortcut Route Matrix"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module"
+		input
+			key b
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		# Ship -> cargo, then cargo -> storage and storage -> cargo.
+		input
+			key u
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		input
+			key r
+		assert
+			"outfit (cargo): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			key c
+		assert
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		# Cargo -> ship; selling falls through empty cargo/storage to ship -> shop.
+		input
+			key i
+		assert
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			key s
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		# Empty storage falls through to shop -> cargo, then cargo -> shop.
+		input
+			key c
+		assert
+			"credits" == 99999000
+			"outfit (cargo): M2 Test Module" == 1
+		input
+			key s
+		assert
+			"credits" == 100000000
+			"outfit (cargo): M2 Test Module" == 0
+		# Empty cargo/ships fall through to shop -> storage. Empty cargo then
+		# falls through to storage -> ship. Finally ship -> storage, then storage -> shop.
+		input
+			key r
+		assert
+			"credits" == 99999000
+			"outfit (storage): M2 Test Module" == 1
+		input
+			key i
+		assert
+			"outfit (storage): M2 Test Module" == 0
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			key r
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			key s
+		assert
+			"credits" == 100000000
+			"outfit (storage): M2 Test Module" == 0
+		input
+			key escape
+
+
+test "M2 Modern Explicit Route Matrix"
+	status active
+	sequence
+		inject "M2 Native Single Ship Save"
+		call "Load First Savegame"
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			key o
+				control
+				alt
+		input
+			outfit "M2 Test Module"
+		input
+			route shop ship
+		input
+			key return
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		# Ship -> cargo, then cargo -> storage and storage -> cargo.
+		input
+			route ship cargo
+		input
+			key return
+		assert
+			"credits" == 99999000
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		input
+			route cargo storage
+		input
+			key return
+		assert
+			"outfit (cargo): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			route storage cargo
+		input
+			key return
+		assert
+			"outfit (cargo): M2 Test Module" == 1
+			"outfit (storage): M2 Test Module" == 0
+		# Cargo -> ship; selling falls through empty cargo/storage to ship -> shop.
+		input
+			route cargo ship
+		input
+			key return
+		assert
+			"outfit (flagship installed): M2 Test Module" == 1
+			"outfit (cargo): M2 Test Module" == 0
+		input
+			route ship shop
+		input
+			key return
+		assert
+			"credits" == 100000000
+			"outfit (flagship installed): M2 Test Module" == 0
+		# Empty storage falls through to shop -> cargo, then cargo -> shop.
+		input
+			route shop cargo
+		input
+			key return
+		assert
+			"credits" == 99999000
+			"outfit (cargo): M2 Test Module" == 1
+		input
+			route cargo shop
+		input
+			key return
+		assert
+			"credits" == 100000000
+			"outfit (cargo): M2 Test Module" == 0
+		# Empty cargo/ships fall through to shop -> storage. Empty cargo then
+		# falls through to storage -> ship. Finally ship -> storage, then storage -> shop.
+		input
+			route shop storage
+		input
+			key return
+		assert
+			"credits" == 99999000
+			"outfit (storage): M2 Test Module" == 1
+		input
+			route storage ship
+		input
+			key return
+		assert
+			"outfit (storage): M2 Test Module" == 0
+			"outfit (flagship installed): M2 Test Module" == 1
+		input
+			route ship storage
+		input
+			key return
+		assert
+			"outfit (flagship installed): M2 Test Module" == 0
+			"outfit (storage): M2 Test Module" == 1
+		input
+			route storage shop
+		input
+			key return
+		assert
+			"credits" == 100000000
+			"outfit (storage): M2 Test Module" == 0
+		input
+			key escape
+
+
+test-data "M2 Native Minable Map Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "Remnant"
+				add outfitter "M2 Native Shop"
+			system "Terra Incognita"
+				add minables iron 1 1
