@@ -33,6 +33,8 @@ class OutfitInfoDisplay : public ItemInfoDisplay {
 public:
 	// Given an attribute name and value, return the string that should be used to display that attribute.
 	static std::string FormatAttribute(const std::string &attribute, double value);
+	// Whether a negative attribute is excluded from native fitting requirements.
+	static bool IsNotRequirement(const std::string &attribute);
 
 
 public:

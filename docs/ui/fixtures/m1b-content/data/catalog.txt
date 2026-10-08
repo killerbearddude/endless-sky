@@ -8,6 +8,7 @@ outfit "M1B Survey Resonator"
 	thumbnail "outfit/harvested aluminum"
 	"mass" 2
 	"m1b field resonance" 7
+	"energy generation" -2
 	description "A deliberately long plugin description for checking the generic catalog and detail pane. This instrument records faint signals from the surrounding system and retains the measurements for later review. Its custom field resonance attribute has no category-specific column and must not be converted into an invented energy or heat claim."
 
 outfit "M1B Experimental Survey Resonator with an Exceptionally Long Plugin-Defined Display Name That Continues Beyond the Available Catalog Row Width and Must Be Truncated Before Its Price Column"

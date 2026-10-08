@@ -246,12 +246,6 @@ namespace {
 		{"can jettison", "Can be jettisoned while installed."},
 	};
 
-	bool IsNotRequirement(const string &label)
-	{
-		return label == "automaton" ||
-			SCALE.find(label) != SCALE.end() ||
-			BOOLEAN_ATTRIBUTES.find(label) != BOOLEAN_ATTRIBUTES.end();
-	}
 }
 
 
@@ -263,6 +257,15 @@ std::string OutfitInfoDisplay::FormatAttribute(const std::string &attribute, dou
 	string units = (sit == SCALE.end() ? "" : SCALE_LABELS[sit->second].second);
 
 	return Format::Number(value * scale) + units;
+}
+
+
+
+bool OutfitInfoDisplay::IsNotRequirement(const string &label)
+{
+	return label == "automaton" ||
+		SCALE.find(label) != SCALE.end() ||
+		BOOLEAN_ATTRIBUTES.find(label) != BOOLEAN_ATTRIBUTES.end();
 }
 
 

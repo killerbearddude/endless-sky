@@ -424,8 +424,8 @@ void ReadOnlyOutfitterPanel::DrawDetails(const Rectangle &bounds)
 	if(selected->Get("required crew") > 0.)
 		fittingData.emplace_back("required crew:", Format::Number(selected->Get("required crew")));
 	for(const auto &[name, value] : *selected)
-		if(value < 0. && name != "required crew")
-			fittingData.emplace_back(name + ":", OutfitInfoDisplay::FormatAttribute(name, value));
+		if(value < 0. && name != "required crew" && !OutfitInfoDisplay::IsNotRequirement(name))
+			fittingData.emplace_back(name + " needed:", Format::Number(-value));
 	const double fittingHeight = fittingData.empty() ? 0. : 32. + 20. * fittingData.size();
 	OutfitInfoDisplay info(*selected, player, false, false);
 	const double contentHeight = 322 + description.Height() + fittingHeight + info.AttributesHeight();
