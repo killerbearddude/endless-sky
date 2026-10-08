@@ -33,6 +33,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "MapDetailPanel.h"
 #include "MessageLogPanel.h"
 #include "MissionPanel.h"
+#include "ModernShopStyle.h"
 #include "OutfitterPanel.h"
 #include "ModernOutfitterPanel.h"
 #include "ModernShipyardPanel.h"
@@ -43,6 +44,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "Port.h"
 #include "Preferences.h"
 #include "Screen.h"
+#include "shader/FillShader.h"
 #include "Ship.h"
 #include "ShipyardPanel.h"
 #include "Shop.h"
@@ -73,7 +75,7 @@ PlanetPanel::PlanetPanel(PlayerInfo &player, function<void()> callback)
 
 	description = make_shared<TextArea>();
 	description->SetFont(FontSet::Get(Preferences::GetFontSize()));
-	description->SetColor(*GameData::Colors().Get("bright"));
+	description->SetColor(ModernShopStyle::Theme("ui/text primary"));
 	description->SetAlignment(Preferences::GetTextAlignment());
 	AddChild(description);
 
@@ -205,8 +207,38 @@ void PlanetPanel::Step()
 
 void PlanetPanel::Draw()
 {
+	FillShader::Fill(Rectangle(Point(), Screen::Dimensions()), ModernShopStyle::Theme("ui/background"));
 	Information info;
 	info.SetSprite("land", planet.Landscape());
+	info.SetString("planet name", planet.DisplayName());
+	info.SetString("system name", system.DisplayName());
+	info.SetString("date", player.GetDate().ToString());
+	info.SetString("credits", Format::CreditString(player.Accounts().Credits()));
+	info.SetString("service title", "PLANET OVERVIEW");
+	if(selectedPanel)
+	{
+		info.SetCondition("in service");
+		if(selectedPanel == trading)
+		{
+			info.SetCondition("is trading");
+			info.SetString("service title", "TRADING");
+		}
+		else if(selectedPanel == bank)
+		{
+			info.SetCondition("is bank");
+			info.SetString("service title", "BANK");
+		}
+		else if(selectedPanel == hiring)
+		{
+			info.SetCondition("is hiring");
+			info.SetString("service title", "HIRE CREW");
+		}
+		else if(selectedPanel == spaceport)
+		{
+			info.SetCondition("is port");
+			info.SetString("service title", planet.GetPort().DisplayName());
+		}
+	}
 
 	const Ship *flagship = player.Flagship();
 	if(flagship && flagship->CanBeFlagship())
@@ -307,13 +339,13 @@ bool PlanetPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, b
 	}
 	else if(key == 's' && (mod & KMOD_CTRL) && (mod & KMOD_ALT) && hasAccess && hasShipyard)
 	{
-		GetUI().Push(new ModernShipyardPanel(player, shipyardStock));
+		GetUI().Push(new ShipyardPanel(player, shipyardStock));
 		return true;
 	}
 	else if(key == 's' && hasAccess && hasShipyard)
 	{
 		UI::PlaySound(UI::UISound::NORMAL);
-		GetUI().Push(new ShipyardPanel(player, shipyardStock));
+		GetUI().Push(new ModernShipyardPanel(player, shipyardStock));
 		return true;
 	}
 	else if(key == 'o' && (mod & KMOD_CTRL) && (mod & KMOD_SHIFT) && hasAccess && hasOutfitter)
@@ -323,13 +355,13 @@ bool PlanetPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, b
 	}
 	else if(key == 'o' && (mod & KMOD_CTRL) && (mod & KMOD_ALT) && hasAccess && hasOutfitter)
 	{
-		GetUI().Push(new ModernOutfitterPanel(player, outfitterStock));
+		GetUI().Push(new OutfitterPanel(player, outfitterStock));
 		return true;
 	}
 	else if(key == 'o' && hasAccess && hasOutfitter)
 	{
 		UI::PlaySound(UI::UISound::NORMAL);
-		GetUI().Push(new OutfitterPanel(player, outfitterStock));
+		GetUI().Push(new ModernOutfitterPanel(player, outfitterStock));
 		return true;
 	}
 	else if(key == 'j' && hasAccess && planet.GetPort().HasService(Port::ServicesType::JobBoard))

@@ -24,9 +24,11 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "GameData.h"
 #include "Information.h"
 #include "Interface.h"
+#include "ModernShopStyle.h"
 #include "PlayerInfo.h"
 #include "Point.h"
 #include "Screen.h"
+#include "shader/FillShader.h"
 #include "text/Table.h"
 #include "text/Truncate.h"
 #include "UI.h"
@@ -73,6 +75,8 @@ void BankPanel::Draw()
 	// Draw the "Pay All" button.
 	const Interface *bankUi = GameData::Interfaces().Get(Screen::Width() < 1280 ? "bank (small screen)" : "bank");
 	const Rectangle box = bankUi->GetBox("content");
+	FillShader::Fill(box, ModernShopStyle::Theme("ui/panel"));
+	ModernShopStyle::Border(box, ModernShopStyle::Theme("ui/divider"));
 	const int MIN_X = box.Left();
 	const int FIRST_Y = box.Top();
 	const int MAX_X = box.Right();
@@ -87,9 +91,9 @@ void BankPanel::Draw()
 	table.DrawAt(Point(0., FIRST_Y));
 
 	// Use stock colors from the game data.
-	const Color &back = *GameData::Colors().Get("faint");
-	const Color &unselected = *GameData::Colors().Get("medium");
-	const Color &selected = *GameData::Colors().Get("bright");
+	const Color &back = ModernShopStyle::Theme("ui/selected");
+	const Color &unselected = ModernShopStyle::Theme("ui/text secondary");
+	const Color &selected = ModernShopStyle::Theme("ui/text primary");
 
 	// Draw the heading of the table.
 	table.SetColor(selected);
@@ -164,7 +168,7 @@ void BankPanel::Draw()
 			otherPrincipal -= mortgage.Principal();
 			otherPayment -= mortgage.Payment();
 		}
-		table.Draw("[pay extra]");
+		table.Draw("PAY EXTRA");
 		++row;
 
 		// Bail out if this was the last row we had space to draw.
@@ -251,7 +255,7 @@ void BankPanel::Draw()
 	if(qualify)
 	{
 		table.Advance(4);
-		table.Draw("[apply]", selected);
+		table.Draw("APPLY", selected);
 	}
 
 	Information info;

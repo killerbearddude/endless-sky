@@ -26,6 +26,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "Information.h"
 #include "Interface.h"
 #include "MapDetailPanel.h"
+#include "ModernShopStyle.h"
 #include "Messages.h"
 #include "Outfit.h"
 #include "Planet.h"
@@ -94,6 +95,8 @@ void TradingPanel::Draw()
 	Information info;
 	const Interface *tradeUi = GameData::Interfaces().Get(Screen::Width() < 1280 ? "trade (small screen)" : "trade");
 	Rectangle box = tradeUi->GetBox("content");
+	FillShader::Fill(box, ModernShopStyle::Theme("ui/panel"));
+	ModernShopStyle::Border(box, ModernShopStyle::Theme("ui/divider"));
 	int minX = box.Left();
 	int firstY = box.Top();
 	int nameX = tradeUi->GetValue("column: name");
@@ -104,7 +107,7 @@ void TradingPanel::Draw()
 	int sellX = tradeUi->GetValue("column: sell");
 	int holdX = tradeUi->GetValue("column: in cargo hold");
 
-	const Color &back = *GameData::Colors().Get("faint");
+	const Color &back = ModernShopStyle::Theme("ui/selected");
 	int selectedRow = player.MapColoring();
 	if(selectedRow >= 0 && selectedRow < COMMODITY_COUNT)
 	{
@@ -114,8 +117,8 @@ void TradingPanel::Draw()
 	}
 
 	const Font &font = FontSet::Get(14);
-	const Color &unselected = *GameData::Colors().Get("medium");
-	const Color &selected = *GameData::Colors().Get("bright");
+	const Color &unselected = ModernShopStyle::Theme("ui/text secondary");
+	const Color &selected = ModernShopStyle::Theme("ui/text primary");
 
 	string mod = "x " + to_string(Modifier());
 	info.SetString("multiplier", mod);
@@ -178,8 +181,8 @@ void TradingPanel::Draw()
 				level = (5 * level) / (commodity.high - commodity.low);
 			font.Draw(TRADE_LEVEL[level], Point(minX + levelX, y), color);
 
-			font.Draw("[buy]", Point(minX + buyX, y), color);
-			font.Draw("[sell]", Point(minX + sellX, y), color);
+			font.Draw("BUY", Point(minX + buyX, y), color);
+			font.Draw("SELL", Point(minX + sellX, y), color);
 		}
 		else
 		{
