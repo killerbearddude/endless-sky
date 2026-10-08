@@ -34,6 +34,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "MessageLogPanel.h"
 #include "MissionPanel.h"
 #include "OutfitterPanel.h"
+#include "ModernOutfitterPanel.h"
 #include "ReadOnlyOutfitterPanel.h"
 #include "Planet.h"
 #include "PlayerInfo.h"
@@ -312,6 +313,11 @@ bool PlanetPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, b
 	else if(key == 'o' && (mod & KMOD_CTRL) && (mod & KMOD_SHIFT) && hasAccess && hasOutfitter)
 	{
 		GetUI().Push(new ReadOnlyOutfitterPanel(player, outfitterStock));
+		return true;
+	}
+	else if(key == 'o' && (mod & KMOD_CTRL) && (mod & KMOD_ALT) && hasAccess && hasOutfitter)
+	{
+		GetUI().Push(new ModernOutfitterPanel(player, outfitterStock));
 		return true;
 	}
 	else if(key == 'o' && hasAccess && hasOutfitter)

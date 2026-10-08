@@ -190,6 +190,8 @@ target_sources(EndlessSkyLib PRIVATE
 	MapDetailPanel.cpp
 	MapDetailPanel.h
 	MapOutfitterPanel.cpp
+	ModernOutfitterPanel.cpp
+	ModernOutfitterPanel.h
 	MapOutfitterPanel.h
 	MapPanel.cpp
 	MapPanel.h

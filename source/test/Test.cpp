@@ -165,6 +165,26 @@ void Test::TestStep::LoadInput(const DataNode &node)
 			if(child.Size() == 4)
 				outfitAllShips = child.Token(3) == "all";
 		}
+		else if(key == "preview" && child.Size() == 3)
+		{
+			previewFrom = child.Token(1);
+			previewTo = child.Token(2);
+		}
+		else if(key == "route" && child.Size() == 3)
+		{
+			routeFrom = child.Token(1);
+			routeTo = child.Token(2);
+		}
+		else if(key == "verify" && child.Size() == 2 && child.Token(1) == "preview")
+			verifyOutfitPreview = true;
+		else if(key == "expect" && child.Size() == 3 && child.Token(1) == "preview"
+				&& child.Token(2) == "harvested")
+			expectHarvestedPreview = true;
+		else if(key == "commit" && child.Size() == 2 && child.Token(1) == "preview")
+			previewCommitExpectation = 1;
+		else if(key == "expect" && child.Size() == 3 && child.Token(1) == "stale"
+				&& child.Token(2) == "preview")
+			previewCommitExpectation = 2;
 		else if(key == "pointer")
 		{
 			for(const DataNode &grand : child)
@@ -525,6 +545,24 @@ void Test::Step(TestContext &context, PlayerInfo &player, UI &gamePanels, Comman
 				++(context.callstack.back().step);
 				break;
 			case TestStep::Type::INPUT:
+				if(!stepToRun.routeFrom.empty()
+						&& (!gamePanels.Top() || !gamePanels.Top()->SelectOutfitRouteForTest(
+							stepToRun.routeFrom, stepToRun.routeTo)))
+					Fail(context, player, "cannot select modern Outfitter route");
+				if(!stepToRun.previewFrom.empty()
+						&& (!gamePanels.Top() || !gamePanels.Top()->PreviewOutfitForTest(
+							stepToRun.previewFrom, stepToRun.previewTo)))
+					Fail(context, player, "Outfitter preview failed or changed live state");
+				if(stepToRun.verifyOutfitPreview
+						&& (!gamePanels.Top() || !gamePanels.Top()->VerifyOutfitPreviewForTest()))
+					Fail(context, player, "Outfitter preview and native execution differ");
+				if(stepToRun.expectHarvestedPreview
+						&& (!gamePanels.Top() || !gamePanels.Top()->PreviewHasHarvestedForTest()))
+					Fail(context, player, "Outfitter preview omitted harvested map discoveries");
+				if(stepToRun.previewCommitExpectation
+						&& (!gamePanels.Top() || !gamePanels.Top()->CommitOutfitPreviewForTest(
+							stepToRun.previewCommitExpectation == 2)))
+					Fail(context, player, "Outfitter preview commit disagreed with the expected state");
 				if(!stepToRun.outfitToSelect.empty()
 						&& (!gamePanels.Top() || !gamePanels.Top()->SelectOutfitForTest(stepToRun.outfitToSelect,
 							stepToRun.outfitQuantity, stepToRun.outfitAllShips)))

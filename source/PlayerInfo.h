@@ -179,6 +179,10 @@ public:
 	const std::shared_ptr<Ship> &FlagshipPtr();
 	// Get the full list of ships the player owns.
 	const std::vector<std::shared_ptr<Ship>> &Ships() const;
+	// Copy the mutable state used by Outfitter transfers without replaying a save
+	// or applying its global universe changes.
+	std::unique_ptr<PlayerInfo> CloneForOutfitterPreview() const;
+	std::string OutfitterPreviewStateSignature() const;
 	// Inspect the flightworthiness of the player's active fleet as a whole to
 	// determine which ships cannot travel with the group.
 	std::map<const std::shared_ptr<Ship>, std::vector<std::string>> FlightCheck() const;

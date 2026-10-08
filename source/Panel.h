@@ -66,6 +66,11 @@ public:
 	// Headless integration tests cannot build draw-time shop selection zones.
 	// Panels that support semantic test selection may override this hook.
 	virtual bool SelectOutfitForTest(const std::string &, int, bool) { return false; }
+	virtual bool PreviewOutfitForTest(const std::string &, const std::string &) { return false; }
+	virtual bool VerifyOutfitPreviewForTest() const { return false; }
+	virtual bool CommitOutfitPreviewForTest(bool) { return false; }
+	virtual bool SelectOutfitRouteForTest(const std::string &, const std::string &) { return false; }
+	virtual bool PreviewHasHarvestedForTest() const { return false; }
 
 	// Return true if this is a full-screen panel, so there is no point in
 	// drawing any of the panels under it.

@@ -18,6 +18,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "text/Alignment.h"
 #include "comparators/BySeriesAndIndex.h"
 #include "Color.h"
+#include "DataWriter.h"
 #include "DialogPanel.h"
 #include "text/DisplayText.h"
 #include "shader/FillShader.h"
@@ -47,6 +48,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include <limits>
 #include <memory>
 #include <ranges>
+#include <sstream>
 
 using namespace std;
 
@@ -110,6 +112,87 @@ namespace {
 				throw runtime_error("unreachable");
 		}
 	}
+
+	optional<OutfitterPanel::OutfitLocation> ParseLocation(const string &name)
+	{
+		if(name == "ship")
+			return OutfitterPanel::OutfitLocation::Ship;
+		if(name == "shop")
+			return OutfitterPanel::OutfitLocation::Shop;
+		if(name == "cargo")
+			return OutfitterPanel::OutfitLocation::Cargo;
+		if(name == "storage")
+			return OutfitterPanel::OutfitLocation::Storage;
+		return nullopt;
+	}
+
+	struct OutfitCounts {
+		int cargo = 0;
+		int storage = 0;
+		int stock = 0;
+	};
+
+	struct ShipState {
+		map<const Outfit *, int> outfits;
+		int crew = 0;
+		double shields = 0.;
+		double hull = 0.;
+		double energy = 0.;
+		double fuel = 0.;
+		double outfitSpace = 0.;
+		double weaponSpace = 0.;
+		double engineSpace = 0.;
+		double cargoSpace = 0.;
+		double mass = 0.;
+	};
+
+	struct TransferState {
+		int64_t credits = 0;
+		int cargoSize = 0;
+		double cargoFree = 0.;
+		int largestHold = 0;
+		string fleetDepreciation;
+		string stockDepreciation;
+		map<const Outfit *, OutfitCounts> items;
+		vector<ShipState> ships;
+		set<string> licenses;
+		set<const System *> visited;
+		set<pair<const System *, const Outfit *>> harvested;
+	};
+
+	TransferState CaptureTransferState(const PlayerInfo &player, const set<const Outfit *> &outfits)
+	{
+		TransferState state;
+		state.credits = player.Accounts().Credits();
+		state.cargoSize = player.Cargo().Size();
+		state.cargoFree = player.Cargo().FreePrecise();
+		state.largestHold = player.LargestCargoHold();
+		DataWriter fleetWriter;
+		player.FleetDepreciation().Save(fleetWriter, player.GetDate().DaysSinceEpoch());
+		state.fleetDepreciation = fleetWriter.SaveToString();
+		DataWriter stockWriter;
+		player.StockDepreciation().Save(stockWriter, player.GetDate().DaysSinceEpoch());
+		state.stockDepreciation = stockWriter.SaveToString();
+		const auto &storage = player.PlanetaryStorage();
+		auto storageIt = storage.find(player.GetPlanet());
+		for(const Outfit *outfit : outfits)
+		{
+			OutfitCounts &counts = state.items[outfit];
+			counts.cargo = player.Cargo().Get(outfit);
+			counts.storage = storageIt == storage.end() ? 0 : storageIt->second.Get(outfit);
+			counts.stock = player.Stock(outfit);
+		}
+		for(const auto &ship : player.Ships())
+			state.ships.push_back({ship->Outfits(), ship->Crew(), ship->ShieldLevel(),
+				ship->HullLevel(), ship->EnergyLevel(), ship->FuelLevel(),
+				ship->Attributes().Get("outfit space"), ship->Attributes().Get("weapon capacity"),
+				ship->Attributes().Get("engine capacity"), ship->Attributes().Get("cargo space"),
+				ship->Mass()});
+		state.licenses = player.Licenses();
+		state.visited = player.VisitedSystems();
+		state.harvested = player.Harvested();
+		return state;
+	}
 }
 
 
@@ -145,6 +228,344 @@ bool OutfitterPanel::SelectOutfitForTest(const string &name, int quantity, bool 
 				playerShips.insert(ship.get());
 	}
 	return true;
+}
+
+
+
+bool OutfitterPanel::PreviewOutfitForTest(const string &from, const string &to)
+{
+	const auto source = ParseLocation(from);
+	const auto destination = ParseLocation(to);
+	if(!source || !destination)
+		return false;
+	testPreview = PreviewMoveOutfit(*source, *destination);
+	return testPreview->precondition == TransferPrecondition();
+}
+
+
+
+bool OutfitterPanel::VerifyOutfitPreviewForTest() const
+{
+	if(!testPreview)
+		return false;
+	return MatchesTransferOutcome(*testPreview);
+}
+
+
+
+bool OutfitterPanel::PreviewHasHarvestedForTest() const
+{
+	return testPreview && !testPreview->harvestedAdded.empty();
+}
+
+
+
+bool OutfitterPanel::CommitOutfitPreviewForTest(bool expectStale)
+{
+	if(!testPreview)
+		return false;
+	CommitResult result = CommitMoveOutfit(*testPreview);
+	if(expectStale)
+	{
+		if(!result.stale || result.committed)
+			return false;
+		testPreview = result.plan;
+		return true;
+	}
+	return result.committed && result.matched;
+}
+
+
+
+bool OutfitterPanel::MatchesTransferOutcome(const TransferPlan &plan) const
+{
+	if(player.Accounts().Credits() != plan.creditsAfter)
+		return false;
+	if(player.Cargo().Size() != plan.cargoSizeAfter || player.Cargo().FreePrecise() != plan.cargoFreeAfter
+			|| player.LargestCargoHold() != plan.largestHoldAfter)
+		return false;
+	DataWriter fleetWriter;
+	player.FleetDepreciation().Save(fleetWriter, player.GetDate().DaysSinceEpoch());
+	DataWriter stockWriter;
+	player.StockDepreciation().Save(stockWriter, player.GetDate().DaysSinceEpoch());
+	if(fleetWriter.SaveToString() != plan.fleetDepreciationAfter
+			|| stockWriter.SaveToString() != plan.stockDepreciationAfter)
+		return false;
+	const auto &storage = player.PlanetaryStorage();
+	auto storageIt = storage.find(player.GetPlanet());
+	for(const ItemEffect &item : plan.items)
+		if(player.Cargo().Get(item.outfit) != item.cargoAfter
+				|| (storageIt == storage.end() ? 0 : storageIt->second.Get(item.outfit)) != item.storageAfter
+				|| player.Stock(item.outfit) != item.stockAfter)
+			return false;
+	for(const ShipEffect &effect : plan.ships)
+	{
+		if(effect.fleetIndex >= player.Ships().size())
+			return false;
+		const Ship &ship = *player.Ships()[effect.fleetIndex];
+		if(ship.Outfits() != effect.outfitsAfter || ship.Crew() != effect.crewAfter
+				|| ship.ShieldLevel() != effect.shieldsAfter || ship.HullLevel() != effect.hullAfter
+				|| ship.EnergyLevel() != effect.energyAfter || ship.FuelLevel() != effect.fuelAfter
+				|| ship.Attributes().Get("outfit space") != effect.outfitSpaceAfter
+				|| ship.Attributes().Get("weapon capacity") != effect.weaponSpaceAfter
+				|| ship.Attributes().Get("engine capacity") != effect.engineSpaceAfter
+				|| ship.Attributes().Get("cargo space") != effect.cargoSpaceAfter
+				|| ship.Mass() != effect.massAfter)
+			return false;
+	}
+	for(const string &license : plan.licensesAdded)
+		if(!player.HasLicense(license))
+			return false;
+	for(const System *system : plan.mappedSystems)
+		if(!player.VisitedSystems().contains(system))
+			return false;
+	for(const auto &item : plan.harvestedAdded)
+		if(!player.Harvested().contains(item))
+			return false;
+	return true;
+}
+
+
+
+OutfitterPanel::CommitResult OutfitterPanel::CommitMoveOutfit(const TransferPlan &preview,
+	const string &actionName)
+{
+	TransferPlan current = PreviewMoveOutfit(preview.from, preview.to, actionName, preview.shortcutKey);
+	if(current != preview)
+		return {false, true, true, current};
+	if(!current.success && !current.hasEffects)
+		return {false, false, true, current};
+	vector<TransferEvent> events;
+	transferEvents = &events;
+	TransactionResult actual = false;
+	try
+	{
+		actual = current.shortcutKey ? HandleShortcuts(current.shortcutKey)
+			: MoveOutfit(current.from, current.to, actionName);
+	}
+	catch(...)
+	{
+		transferEvents = nullptr;
+		throw;
+	}
+	transferEvents = nullptr;
+	if(!actual.HasMessage())
+		player.UpdateCargoCapacities();
+	vector<AllocationStep> allocation;
+	for(const TransferEvent &event : events)
+	{
+		auto it = find_if(player.Ships().begin(), player.Ships().end(),
+			[&event](const shared_ptr<Ship> &owned) { return owned.get() == event.ship; });
+		if(it != player.Ships().end())
+			allocation.push_back({static_cast<size_t>(it - player.Ships().begin()),
+				event.outfit, event.quantity, event.from, event.to});
+	}
+	const bool matched = static_cast<bool>(actual) == current.success
+		&& actual.Message() == current.reason && allocation == current.allocation
+		&& MatchesTransferOutcome(current);
+	return {true, false, matched, current};
+}
+
+
+
+string OutfitterPanel::TransferPrecondition() const
+{
+	ostringstream context;
+	context << player.OutfitterPreviewStateSignature() << "\nselected outfit " << selectedOutfit
+		<< "\nquantity " << selectedQuantity->Text() << "\nprimary ship " << playerShip;
+	for(const Ship *ship : playerShips)
+		context << "\nselected ship " << ship;
+	return context.str();
+}
+
+
+
+void OutfitterPanel::RecordTransfer(Ship *ship, const Outfit *outfit, int quantity,
+	OutfitLocation from, OutfitLocation to) const
+{
+	if(transferEvents)
+		transferEvents->push_back({ship, outfit, quantity, from, to});
+}
+
+
+
+OutfitterPanel::TransferPlan OutfitterPanel::PreviewMoveOutfit(OutfitLocation from, OutfitLocation to,
+	const string &actionName, SDL_Keycode shortcutKey) const
+{
+	TransferPlan plan;
+	plan.from = from;
+	plan.to = to;
+	plan.shortcutKey = shortcutKey;
+	plan.outfit = selectedOutfit;
+	plan.selectedShipCount = playerShips.size();
+	plan.precondition = TransferPrecondition();
+	if(!selectedOutfit)
+	{
+		plan.reason = "No outfit selected.";
+		return plan;
+	}
+	if(from == to)
+	{
+		plan.reason = "Source and destination are the same.";
+		return plan;
+	}
+	try
+	{
+		const string &quantity = selectedQuantity->Text();
+		plan.requestedQuantity = quantity.empty() ? 1 : stoi(quantity);
+	}
+	catch(const exception &)
+	{
+		plan.reason = "Enter a quantity within the supported integer range.";
+		return plan;
+	}
+	if(plan.requestedQuantity <= 0)
+	{
+		plan.reason = "Quantity must be greater than zero.";
+		return plan;
+	}
+
+	const bool permanent = selectedOutfit->Get("map") || IsLicense(selectedOutfit->TrueName());
+	if(permanent)
+		plan.requestedQuantity = 1;
+
+	set<const Outfit *> relevant{selectedOutfit};
+	relevant.insert(selectedOutfit->LinkedOutfits().begin(), selectedOutfit->LinkedOutfits().end());
+	const TransferState before = CaptureTransferState(player, relevant);
+	auto scratchPlayer = player.CloneForOutfitterPreview();
+	OutfitterPanel scratch(*scratchPlayer, outfitter);
+	scratch.selectedOutfit = selectedOutfit;
+	scratch.selectedQuantity->SetText(selectedQuantity->Text());
+	scratch.playerShips.clear();
+	scratch.playerShip = nullptr;
+	for(Ship *ship : playerShips)
+	{
+		auto it = find_if(player.Ships().begin(), player.Ships().end(),
+			[ship](const shared_ptr<Ship> &owned) { return owned.get() == ship; });
+		if(it == player.Ships().end())
+		{
+			plan.reason = "Selected ships changed; refresh the transfer.";
+			return plan;
+		}
+		const size_t index = it - player.Ships().begin();
+		Ship *copy = scratchPlayer->Ships()[index].get();
+		scratch.playerShips.insert(copy);
+		scratch.transferOrder.push_back(copy);
+		if(ship == playerShip)
+			scratch.playerShip = copy;
+	}
+	if(playerShip && !scratch.playerShip)
+	{
+		plan.reason = "Primary ship changed; refresh the transfer.";
+		return plan;
+	}
+	vector<TransferEvent> events;
+	scratch.transferEvents = &events;
+	const TransactionResult result = shortcutKey ? scratch.HandleShortcuts(shortcutKey)
+		: scratch.MoveOutfit(from, to, actionName);
+	scratch.transferEvents = nullptr;
+	if(shortcutKey && scratch.lastRoute)
+	{
+		from = scratch.lastRoute->first;
+		to = scratch.lastRoute->second;
+		plan.from = from;
+		plan.to = to;
+	}
+	plan.quantityPerShip = !permanent && (from == OutfitLocation::Ship || to == OutfitLocation::Ship);
+	for(const Ship *ship : playerShips)
+		if(from == OutfitLocation::Ship ? ShipCanRemove(ship, selectedOutfit)
+				: (to == OutfitLocation::Ship && ShipCanAdd(ship, selectedOutfit)))
+			++plan.eligibleShipCount;
+	if(!result.HasMessage())
+		scratchPlayer->UpdateCargoCapacities();
+	const TransferState after = CaptureTransferState(*scratchPlayer, relevant);
+	plan.success = static_cast<bool>(result);
+	plan.reason = result.Message();
+	plan.creditsBefore = before.credits;
+	plan.creditsAfter = after.credits;
+	plan.cargoSizeBefore = before.cargoSize;
+	plan.cargoSizeAfter = after.cargoSize;
+	plan.cargoFreeBefore = before.cargoFree;
+	plan.cargoFreeAfter = after.cargoFree;
+	plan.largestHoldBefore = before.largestHold;
+	plan.largestHoldAfter = after.largestHold;
+	plan.fleetDepreciationAfter = after.fleetDepreciation;
+	plan.stockDepreciationAfter = after.stockDepreciation;
+	for(const TransferEvent &event : events)
+	{
+		auto it = find_if(scratchPlayer->Ships().begin(), scratchPlayer->Ships().end(),
+			[&event](const shared_ptr<Ship> &owned) { return owned.get() == event.ship; });
+		if(it != scratchPlayer->Ships().end())
+			plan.allocation.push_back({static_cast<size_t>(it - scratchPlayer->Ships().begin()),
+				event.outfit, event.quantity, event.from, event.to});
+	}
+	for(const Outfit *outfit : relevant)
+	{
+		const OutfitCounts &a = before.items.at(outfit);
+		const OutfitCounts &b = after.items.at(outfit);
+		plan.items.push_back({outfit, a.cargo, b.cargo, a.storage, b.storage, a.stock, b.stock});
+	}
+	for(Ship *ship : playerShips)
+	{
+		auto it = find_if(player.Ships().begin(), player.Ships().end(),
+			[ship](const shared_ptr<Ship> &owned) { return owned.get() == ship; });
+		const size_t index = it - player.Ships().begin();
+		const ShipState &a = before.ships[index];
+		const ShipState &b = after.ships[index];
+		plan.ships.push_back({index, ship->GivenName(), a.outfits, b.outfits, a.crew, b.crew,
+			a.shields, b.shields, a.hull, b.hull, a.energy, b.energy, a.fuel, b.fuel,
+			a.outfitSpace, b.outfitSpace, a.weaponSpace, b.weaponSpace,
+			a.engineSpace, b.engineSpace, a.cargoSpace, b.cargoSpace, a.mass, b.mass});
+		auto Count = [this](const map<const Outfit *, int> &outfits) {
+			auto found = outfits.find(selectedOutfit);
+			return found == outfits.end() ? 0 : found->second;
+		};
+		if(from == OutfitLocation::Ship)
+			plan.fulfilledQuantity += max(0, Count(a.outfits) - Count(b.outfits));
+		else if(to == OutfitLocation::Ship && !permanent)
+			plan.fulfilledQuantity += max(0, Count(b.outfits) - Count(a.outfits));
+	}
+	if(from == OutfitLocation::Cargo)
+		plan.fulfilledQuantity = max(0, before.items.at(selectedOutfit).cargo - after.items.at(selectedOutfit).cargo);
+	else if(from == OutfitLocation::Storage)
+		plan.fulfilledQuantity = max(0, before.items.at(selectedOutfit).storage - after.items.at(selectedOutfit).storage);
+	else if(from == OutfitLocation::Shop && permanent)
+		plan.fulfilledQuantity = plan.success ? 1 : 0;
+	else if(from == OutfitLocation::Shop && to == OutfitLocation::Cargo)
+		plan.fulfilledQuantity = max(0, after.items.at(selectedOutfit).cargo - before.items.at(selectedOutfit).cargo);
+	else if(from == OutfitLocation::Shop && to == OutfitLocation::Storage)
+		plan.fulfilledQuantity = max(0, after.items.at(selectedOutfit).storage - before.items.at(selectedOutfit).storage);
+	set_difference(after.licenses.begin(), after.licenses.end(), before.licenses.begin(), before.licenses.end(),
+		back_inserter(plan.licensesAdded));
+	set_difference(after.visited.begin(), after.visited.end(), before.visited.begin(), before.visited.end(),
+		back_inserter(plan.mappedSystems));
+	set_difference(after.harvested.begin(), after.harvested.end(),
+		before.harvested.begin(), before.harvested.end(), back_inserter(plan.harvestedAdded));
+	plan.hasEffects = plan.creditsBefore != plan.creditsAfter
+		|| plan.cargoSizeBefore != plan.cargoSizeAfter || plan.cargoFreeBefore != plan.cargoFreeAfter
+		|| plan.largestHoldBefore != plan.largestHoldAfter
+		|| before.fleetDepreciation != after.fleetDepreciation
+		|| before.stockDepreciation != after.stockDepreciation
+		|| !plan.licensesAdded.empty() || !plan.mappedSystems.empty() || !plan.harvestedAdded.empty();
+	for(const ItemEffect &item : plan.items)
+		plan.hasEffects |= item.cargoBefore != item.cargoAfter || item.storageBefore != item.storageAfter
+			|| item.stockBefore != item.stockAfter;
+	for(const ShipEffect &ship : plan.ships)
+		plan.hasEffects |= ship.outfitsBefore != ship.outfitsAfter || ship.crewBefore != ship.crewAfter
+			|| ship.shieldsBefore != ship.shieldsAfter || ship.hullBefore != ship.hullAfter
+			|| ship.energyBefore != ship.energyAfter || ship.fuelBefore != ship.fuelAfter
+			|| ship.outfitSpaceBefore != ship.outfitSpaceAfter
+			|| ship.weaponSpaceBefore != ship.weaponSpaceAfter
+			|| ship.engineSpaceBefore != ship.engineSpaceAfter
+			|| ship.cargoSpaceBefore != ship.cargoSpaceAfter || ship.massBefore != ship.massAfter;
+	return plan;
+}
+
+
+
+OutfitterPanel::TransferPlan OutfitterPanel::PreviewShortcut(SDL_Keycode key) const
+{
+	return PreviewMoveOutfit(OutfitLocation::Shop, OutfitLocation::Ship, "native shortcut", key);
 }
 
 
@@ -743,6 +1164,7 @@ ShopPanel::TransactionResult OutfitterPanel::MoveOutfit(OutfitLocation fromLocat
 	TransactionResult canMove = CanMoveOutfit(fromLocation, toLocation, actionName);
 	if(!canMove)
 		return canMove;
+	lastRoute = {fromLocation, toLocation};
 
 	// The count of how many outfits will be moved will be per ship when ships are involved, otherwise simply per hold.
 	// Hence, the concept of how many "per" rather than how many in total.
@@ -807,6 +1229,7 @@ ShopPanel::TransactionResult OutfitterPanel::MoveOutfit(OutfitLocation fromLocat
 
 					// Install it on this ship.
 					ship->AddOutfit(selectedOutfit, 1);
+					RecordTransfer(ship, selectedOutfit, 1, fromLocation, toLocation);
 					int required = selectedOutfit->Get("required crew") + selectedOutfit->Get("mandatory crew");
 					if(required && ship->Crew() + required <= static_cast<int>(ship->Attributes().Get("bunks")))
 						ship->AddCrew(required);
@@ -894,6 +1317,7 @@ ShopPanel::TransactionResult OutfitterPanel::MoveOutfit(OutfitLocation fromLocat
 				}
 				else if(toLocation == OutfitLocation::Storage)
 					player.Storage().Add(selectedOutfit, 1);
+				RecordTransfer(ship, selectedOutfit, 1, fromLocation, toLocation);
 
 				// Move linked outfits to storage.
 				// Since some outfits have linked outfits, remove any that must also be moved as there
@@ -991,6 +1415,7 @@ ShopPanel::TransactionResult OutfitterPanel::MoveOutfit(OutfitLocation fromLocat
 
 					// Install it on this ship.
 					ship->AddOutfit(selectedOutfit, 1);
+					RecordTransfer(ship, selectedOutfit, 1, fromLocation, toLocation);
 					int required = selectedOutfit->Get("required crew") + selectedOutfit->Get("mandatory crew");
 					if(required && ship->Crew() + required <= static_cast<int>(ship->Attributes().Get("bunks")))
 						ship->AddCrew(required);
@@ -1302,11 +1727,11 @@ const vector<Ship *> OutfitterPanel::GetShipsToOutfit(bool isInstall) const
 	vector<Ship *> shipsToOutfit;
 	int compareValue = isInstall ? numeric_limits<int>::max() : 0;
 	int compareMod = 2 * isInstall - 1;
-	for(Ship *ship : playerShips)
+	auto Consider = [&](Ship *ship)
 	{
 		if((isInstall && !ShipCanAdd(ship, selectedOutfit))
 				|| (!isInstall && !ShipCanRemove(ship, selectedOutfit)))
-			continue;
+			return;
 
 		int count = ship->OutfitCount(selectedOutfit);
 		if(compareMod * count < compareMod * compareValue)
@@ -1316,7 +1741,15 @@ const vector<Ship *> OutfitterPanel::GetShipsToOutfit(bool isInstall) const
 		}
 		if(count == compareValue)
 			shipsToOutfit.push_back(ship);
-	}
+	};
+	// The scratch preview has different ship addresses. Its explicit order maps
+	// the native selected-pointer order onto the corresponding copied ships.
+	if(transferOrder.empty())
+		for(Ship *ship : playerShips)
+			Consider(ship);
+	else
+		for(Ship *ship : transferOrder)
+			Consider(ship);
 
 	return shipsToOutfit;
 }
@@ -1459,6 +1892,7 @@ void OutfitterPanel::DrawButtons()
 
 ShopPanel::TransactionResult OutfitterPanel::HandleShortcuts(SDL_Keycode key)
 {
+	lastRoute.reset();
 	TransactionResult result = false;
 	if(key == 'b')
 	{

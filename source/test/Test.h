@@ -104,6 +104,13 @@ public:
 		std::string outfitToSelect;
 		int outfitQuantity = 1;
 		bool outfitAllShips = false;
+		std::string previewFrom;
+		std::string previewTo;
+		std::string routeFrom;
+		std::string routeTo;
+		bool verifyOutfitPreview = false;
+		bool expectHarvestedPreview = false;
+		int previewCommitExpectation = 0;
 		Uint16 modKeys = 0;
 
 		// Mouse/Pointer input variables.

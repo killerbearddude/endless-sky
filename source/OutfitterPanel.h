@@ -19,13 +19,19 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "Sale.h"
 
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 class Outfit;
 class PlayerInfo;
 class Point;
 class Ship;
+class System;
 
 
 
@@ -46,10 +52,107 @@ public:
 		Storage,
 	};
 
+	struct ItemEffect {
+		const Outfit *outfit = nullptr;
+		int cargoBefore = 0;
+		int cargoAfter = 0;
+		int storageBefore = 0;
+		int storageAfter = 0;
+		int stockBefore = 0;
+		int stockAfter = 0;
+		bool operator==(const ItemEffect &) const = default;
+	};
+
+	struct ShipEffect {
+		size_t fleetIndex = 0;
+		std::string name;
+		std::map<const Outfit *, int> outfitsBefore;
+		std::map<const Outfit *, int> outfitsAfter;
+		int crewBefore = 0;
+		int crewAfter = 0;
+		double shieldsBefore = 0.;
+		double shieldsAfter = 0.;
+		double hullBefore = 0.;
+		double hullAfter = 0.;
+		double energyBefore = 0.;
+		double energyAfter = 0.;
+		double fuelBefore = 0.;
+		double fuelAfter = 0.;
+		double outfitSpaceBefore = 0.;
+		double outfitSpaceAfter = 0.;
+		double weaponSpaceBefore = 0.;
+		double weaponSpaceAfter = 0.;
+		double engineSpaceBefore = 0.;
+		double engineSpaceAfter = 0.;
+		double cargoSpaceBefore = 0.;
+		double cargoSpaceAfter = 0.;
+		double massBefore = 0.;
+		double massAfter = 0.;
+		bool operator==(const ShipEffect &) const = default;
+	};
+
+	struct AllocationStep {
+		size_t fleetIndex = 0;
+		const Outfit *outfit = nullptr;
+		int quantity = 0;
+		OutfitLocation from = OutfitLocation::Shop;
+		OutfitLocation to = OutfitLocation::Ship;
+		bool operator==(const AllocationStep &) const = default;
+	};
+
+	struct TransferPlan {
+		OutfitLocation from = OutfitLocation::Shop;
+		OutfitLocation to = OutfitLocation::Ship;
+		SDL_Keycode shortcutKey = 0;
+		const Outfit *outfit = nullptr;
+		int requestedQuantity = 1;
+		int selectedShipCount = 0;
+		int eligibleShipCount = 0;
+		int fulfilledQuantity = 0;
+		bool quantityPerShip = false;
+		bool success = false;
+		bool hasEffects = false;
+		std::string reason;
+		int64_t creditsBefore = 0;
+		int64_t creditsAfter = 0;
+		int cargoSizeBefore = 0;
+		int cargoSizeAfter = 0;
+		double cargoFreeBefore = 0.;
+		double cargoFreeAfter = 0.;
+		int largestHoldBefore = 0;
+		int largestHoldAfter = 0;
+		std::string fleetDepreciationAfter;
+		std::string stockDepreciationAfter;
+		std::vector<ItemEffect> items;
+		std::vector<ShipEffect> ships;
+		std::vector<AllocationStep> allocation;
+		std::vector<std::string> licensesAdded;
+		std::vector<const System *> mappedSystems;
+		std::vector<std::pair<const System *, const Outfit *>> harvestedAdded;
+		std::string precondition;
+		bool operator==(const TransferPlan &) const = default;
+	};
+
+	struct CommitResult {
+		bool committed = false;
+		bool stale = false;
+		bool matched = false;
+		TransferPlan plan;
+	};
+
 
 public:
 	OutfitterPanel(PlayerInfo &player, const Sale<Outfit> &stock);
 	bool SelectOutfitForTest(const std::string &name, int quantity, bool allShips) override;
+	bool PreviewOutfitForTest(const std::string &from, const std::string &to) override;
+	bool VerifyOutfitPreviewForTest() const override;
+	bool PreviewHasHarvestedForTest() const override;
+	bool CommitOutfitPreviewForTest(bool expectStale) override;
+	TransferPlan PreviewMoveOutfit(OutfitLocation from, OutfitLocation to,
+		const std::string &actionName = "no action specified", SDL_Keycode shortcutKey = 0) const;
+	TransferPlan PreviewShortcut(SDL_Keycode key) const;
+	CommitResult CommitMoveOutfit(const TransferPlan &preview,
+		const std::string &actionName = "no action specified");
 
 	virtual void Step() override;
 
@@ -83,6 +186,21 @@ protected:
 
 
 private:
+	struct TransferEvent {
+		Ship *ship = nullptr;
+		const Outfit *outfit = nullptr;
+		int quantity = 0;
+		OutfitLocation from = OutfitLocation::Shop;
+		OutfitLocation to = OutfitLocation::Ship;
+	};
+	void RecordTransfer(Ship *ship, const Outfit *outfit, int quantity,
+		OutfitLocation from, OutfitLocation to) const;
+	mutable std::vector<TransferEvent> *transferEvents = nullptr;
+	mutable std::optional<std::pair<OutfitLocation, OutfitLocation>> lastRoute;
+	std::string TransferPrecondition() const;
+	bool MatchesTransferOutcome(const TransferPlan &plan) const;
+	std::optional<TransferPlan> testPreview;
+	std::vector<Ship *> transferOrder;
 	static bool ShipCanAdd(const Ship *ship, const Outfit *outfit);
 	static bool ShipCanRemove(const Ship *ship, const Outfit *outfit);
 	void DrawOutfit(const Outfit &outfit, const Point &center, bool isSelected, bool isOwned) const;

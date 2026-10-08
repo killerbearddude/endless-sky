@@ -1237,6 +1237,56 @@ const vector<shared_ptr<Ship>> &PlayerInfo::Ships() const
 
 
 
+unique_ptr<PlayerInfo> PlayerInfo::CloneForOutfitterPreview() const
+{
+	auto copy = make_unique<PlayerInfo>();
+	copy->date = date;
+	copy->system = system;
+	copy->planet = planet;
+	copy->accounts = accounts;
+	copy->licenses = licenses;
+	copy->cargo = cargo;
+	copy->largestCargoHold = largestCargoHold;
+	copy->planetaryStorage = planetaryStorage;
+	copy->stock = stock;
+	copy->depreciation = depreciation;
+	copy->stockDepreciation = stockDepreciation;
+	copy->seen = seen;
+	copy->visitedSystems = visitedSystems;
+	copy->visitedPlanets = visitedPlanets;
+	copy->harvested = harvested;
+	copy->collapsed = collapsed;
+	copy->ships.reserve(ships.size());
+	for(const auto &ship : ships)
+	{
+		auto shipCopy = make_shared<Ship>(*ship);
+		copy->ships.push_back(shipCopy);
+		if(ship == flagship)
+			copy->flagship = shipCopy;
+	}
+	return copy;
+}
+
+
+
+string PlayerInfo::OutfitterPreviewStateSignature() const
+{
+	DataWriter writer;
+	Save(writer);
+	string state = writer.SaveToString();
+	// The game records wall-clock playtime while landed; that value does not
+	// affect an Outfitter transaction or invalidate its preview.
+	const size_t playtime = state.find("\nplaytime ");
+	if(playtime != string::npos)
+	{
+		const size_t end = state.find('\n', playtime + 1);
+		state.erase(playtime, end == string::npos ? string::npos : end - playtime);
+	}
+	return state;
+}
+
+
+
 // Inspect the flightworthiness of the player's active fleet, individually and
 // as a whole, to determine which ships cannot travel with the group.
 // Returns a mapping of ships to the reason their flight check failed.
