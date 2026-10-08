@@ -1,0 +1,32 @@
+# Disposable M3 Shipyard content and color override fixture.
+category "ship"
+	"M3 Survey"
+
+ship "M3 Survey Barge"
+	sprite "ship/star barge"
+	thumbnail "thumbnail/star barge"
+	attributes
+		category "M3 Survey"
+		cost 200000
+		shields 600
+		hull 1000
+		"required crew" 1
+		bunks 3
+		mass 80
+		drag 2.2
+		"fuel capacity" 300
+		"cargo space" 50
+		"outfit space" 130
+		"engine capacity" 40
+	outfits
+		Hyperdrive
+		"nGVF-BB Fuel Cell"
+		"LP036a Battery Pack"
+		"X1700 Ion Thruster"
+		"X1200 Ion Steering"
+	description "A plugin-defined ship in a plugin-defined category for M3 catalog and palette checks."
+
+shipyard "Remnant"
+	add "M3 Survey Barge"
+
+color "ui/focus" .95 .20 .75 1.

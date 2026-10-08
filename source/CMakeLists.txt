@@ -192,6 +192,9 @@ target_sources(EndlessSkyLib PRIVATE
 	MapOutfitterPanel.cpp
 	ModernOutfitterPanel.cpp
 	ModernOutfitterPanel.h
+	ModernShipyardPanel.cpp
+	ModernShipyardPanel.h
+	ModernShopStyle.h
 	MapOutfitterPanel.h
 	MapPanel.cpp
 	MapPanel.h

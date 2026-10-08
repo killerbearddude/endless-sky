@@ -1,0 +1,166 @@
+# Focused M3 Shipyard entry and native transaction smoke cases.
+shipyard "M3 Test Yard"
+	"Star Barge"
+
+
+test-data "M3 Modern Shipyard Save"
+	category "savegame"
+	contents
+		pilot Bobbi Bughunter
+		date 16 11 3013
+		system "Terra Incognita"
+		planet Ruin
+		clearance
+		ship "Star Barge"
+			name "Buggy Barge"
+			sprite "ship/star barge"
+			attributes
+				category "Light Freighter"
+				cost 190000
+				mass 10
+				bunks 3
+				"cargo space" 50
+				drag 1
+				"engine capacity" 400
+				"fuel capacity" 300
+				"heat dissipation" 0.8
+				hull 1000
+				"outfit space" 1300
+				"required crew" 1
+				shields 600
+				"turret mounts" 1
+				"weapon capacity" 200
+				"thrust" 50
+				"turn" 1000
+			outfits
+				Hyperdrive
+				"nGVF-BB Fuel Cell"
+				"LP036a Battery Pack"
+			crew 1
+			fuel 300
+			shields 600
+			hull 1000
+			position 0 0
+			engine -9 38 1
+			engine 9 38 1
+			turret 0 -8
+			leak leak 60 50
+			explode "tiny explosion" 10
+			explode "small explosion" 10
+			system "Terra Incognita"
+			planet Ruin
+		account
+			credits 100000000
+			score 400
+			history
+		visited "Terra Incognita"
+		"visited planet" Ruin
+		changes
+			planet Ruin
+				add shipyard "M3 Test Yard"
+				add outfitter "Remnant Core"
+
+
+
+test "M3 Modern Shipyard Buy Sell"
+	status active
+	sequence
+		inject "M3 Modern Shipyard Save"
+		call "Load First Savegame"
+		assert
+			"credits" == 100000000
+			"ship model (all): Star Barge" == 1
+		input
+			key s
+				control
+				alt
+		input
+			key b
+		input
+			key return
+		assert
+			"ship model (all): Star Barge" == 2
+			"credits" < 100000000
+		input
+			key s
+		input
+			key return
+		assert
+			"ship model (all): Star Barge" == 1
+		input
+			key escape
+
+
+test "M3 Modern Shipyard Mission"
+	status active
+	sequence
+		inject "Shipyard Outfitter Mission Missions"
+		inject "Shipyard Outfitter Mission Save"
+		call "Load First Savegame"
+		apply
+			"TEST: SHIPYARD MISSION OFFER" = 1
+		call "Depart"
+		navigate
+			"travel destination" Ruin
+		call "Land"
+		input
+			key s
+				control
+				alt
+		call "Skip Mission"
+		call "Depart"
+		call "Test Shipyard And Outfitter Mission"
+		assert
+			"succeed test" == 1
+
+
+test "M3 Modern Shipyard Sell Hull"
+	status active
+	sequence
+		inject "M3 Modern Shipyard Save"
+		call "Load First Savegame"
+		input
+			key s
+				control
+				alt
+		input
+			key b
+		input
+			key return
+		assert
+			"ship model (all): Star Barge" == 2
+			"outfit (storage): Hyperdrive" == 0
+		input
+			key u
+		input
+			key return
+		assert
+			"ship model (all): Star Barge" == 1
+			"outfit (storage): Hyperdrive" == 1
+		input
+			key escape
+
+
+test "M3 Modern Shipyard Save Reload"
+	status active
+	sequence
+		inject "M3 Modern Shipyard Save"
+		call "Load First Savegame"
+		input
+			key s
+				control
+				alt
+		input
+			key b
+		input
+			key return
+		assert
+			"credits" == 99605000
+			"ship model (all): Star Barge" == 2
+		input
+			key escape
+		call "Open Menu"
+		call "Load First Savegame"
+		assert
+			"credits" == 99605000
+			"ship model (all): Star Barge" == 2

@@ -14,6 +14,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "ModernOutfitterPanel.h"
+#include "ModernShopStyle.h"
 
 #include "CategoryList.h"
 #include "CategoryType.h"
@@ -49,62 +50,9 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include <utility>
 
 using namespace std;
+using namespace ModernShopStyle;
 
 namespace {
-	const Color &Theme(const char *name)
-	{
-		return *GameData::Colors().Get(name);
-	}
-
-	void Border(const Rectangle &r, const Color &color, float width = 1.f)
-	{
-		LineShader::Draw(r.TopLeft(), r.TopRight(), width, color);
-		LineShader::Draw(r.TopRight(), r.BottomRight(), width, color);
-		LineShader::Draw(r.BottomRight(), r.BottomLeft(), width, color);
-		LineShader::Draw(r.BottomLeft(), r.TopLeft(), width, color);
-	}
-
-	class SearchEdit final : public Edit {
-	public:
-		bool KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, bool isNewPress) override
-		{
-			if(key == SDLK_TAB)
-			{
-				SetFocus(false);
-				return true;
-			}
-			return Edit::KeyDown(key, mod, command, isNewPress);
-		}
-
-		void Draw() override
-		{
-			Edit::Draw();
-			Border(Position(), Theme(HasFocus() ? "ui/focus" : "ui/control border"), HasFocus() ? 2.f : 1.f);
-		}
-	};
-
-	string Lower(string value)
-	{
-		transform(value.begin(), value.end(), value.begin(), [](unsigned char c) { return tolower(c); });
-		return value;
-	}
-
-	// The native game draws in centered logical coordinates. The scissor keeps long
-	// descriptions and rows within their own panes at every effective UI zoom.
-	void Clip(const Rectangle &r)
-	{
-		const double zoom = Screen::Zoom() / 100.;
-		glEnable(GL_SCISSOR_TEST);
-		glScissor(static_cast<int>((r.Left() - Screen::Left()) * zoom),
-			static_cast<int>((Screen::Bottom() - r.Bottom()) * zoom),
-			static_cast<int>(r.Width() * zoom), static_cast<int>(r.Height() * zoom));
-	}
-
-	void EndClip()
-	{
-		glDisable(GL_SCISSOR_TEST);
-	}
-
 	const char *RouteName(OutfitterPanel::OutfitLocation location)
 	{
 		switch(location)

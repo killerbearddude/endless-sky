@@ -35,6 +35,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "MissionPanel.h"
 #include "OutfitterPanel.h"
 #include "ModernOutfitterPanel.h"
+#include "ModernShipyardPanel.h"
 #include "ReadOnlyOutfitterPanel.h"
 #include "Planet.h"
 #include "PlayerInfo.h"
@@ -303,6 +304,11 @@ bool PlanetPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, b
 		selectedPanel = spaceport;
 		if(isNewPress)
 			spaceport->UpdateNews();
+	}
+	else if(key == 's' && (mod & KMOD_CTRL) && (mod & KMOD_ALT) && hasAccess && hasShipyard)
+	{
+		GetUI().Push(new ModernShipyardPanel(player, shipyardStock));
+		return true;
 	}
 	else if(key == 's' && hasAccess && hasShipyard)
 	{
