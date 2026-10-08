@@ -31,6 +31,7 @@ Foundation, either version 3 of the License, or (at your option) any later versi
 #include "text/Truncate.h"
 #include "text/DisplayText.h"
 #include "text/Alignment.h"
+#include "text/WrappedText.h"
 #include "UI.h"
 
 #include <algorithm>
@@ -355,21 +356,45 @@ void ModernShipyardPanel::DrawDetailsPane(const Rectangle &bounds)
 	font.Draw({selected->DisplayModelName(), {static_cast<int>(bounds.Width() - titleInset - 12), Alignment::LEFT, Truncate::MIDDLE}},
 		bounds.TopLeft() + Point(titleInset, 10), Theme("ui/text primary"));
 	shipInfo.Update(*selected, player, hasFleetCapacity, false, true);
+	const int64_t shipPrice = player.StockDepreciation().Value(*selected, day);
+	const int64_t licenseCost = LicenseCost(&selected->Attributes());
+	WrappedText blockedLicense(font);
+	if(licenseCost < 0)
+	{
+		blockedLicense.SetAlignment(Alignment::LEFT);
+		blockedLicense.SetWrapWidth(300);
+		blockedLicense.Wrap(CanDoBuyButton().Message());
+	}
 	const Rectangle viewport = Rectangle::FromCorner(bounds.TopLeft() + Point(1, 40),
 		Point(bounds.Width() - 2, bounds.Height() - 41));
 	detailScroll.SetDisplaySize(viewport.Height());
-	detailScroll.SetMaxValue(175. + shipInfo.DescriptionHeight() + shipInfo.AttributesHeight() + shipInfo.OutfitsHeight());
+	detailScroll.SetMaxValue(175. + (licenseCost > 0 ? 25. : licenseCost < 0 ? blockedLicense.Height() : 0.)
+		+ shipInfo.DescriptionHeight() + shipInfo.AttributesHeight() + shipInfo.OutfitsHeight());
 	Clip(viewport);
 	if(const Sprite *sprite = selected->Thumbnail().GetSprite(); sprite && sprite->IsLoaded())
 		SpriteShader::Draw(sprite, Point(bounds.Center().X(), viewport.Top() + 55 - detailScroll.Value()),
 			min(90. / max(sprite->Width(), sprite->Height()), 1.));
 	const double contentX = compact ? bounds.Center().X() - 150. : bounds.Left() + 12.;
 	double y = viewport.Top() + 112 - detailScroll.Value();
-	const int64_t price = player.StockDepreciation().Value(*selected, day);
-	font.Draw("Purchase price: " + Format::CreditString(price), Point(contentX, y), Theme("ui/text secondary"));
+	font.Draw("Ship price: " + Format::CreditString(shipPrice), Point(contentX, y), Theme("ui/text secondary"));
 	y += 25;
-	font.Draw("Base price: " + Format::CreditString(selected->Cost()), Point(contentX, y), Theme("ui/text secondary"));
-	y += 28;
+	if(licenseCost < 0)
+	{
+		blockedLicense.Draw(Point(contentX, y), Theme("ui/text secondary"));
+		y += blockedLicense.Height() + 8;
+	}
+	else
+	{
+		if(licenseCost)
+		{
+			font.Draw("License cost: " + Format::CreditString(licenseCost),
+				Point(contentX, y), Theme("ui/text secondary"));
+			y += 25;
+		}
+		font.Draw("Total cost: " + Format::CreditString(shipPrice + licenseCost),
+			Point(contentX, y), Theme("ui/text secondary"));
+		y += 28;
+	}
 	shipInfo.DrawDescription(Point(contentX, y));
 	y += shipInfo.DescriptionHeight() + 10;
 	shipInfo.DrawAttributes(Point(contentX, y));
