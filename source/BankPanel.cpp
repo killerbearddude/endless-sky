@@ -20,7 +20,9 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "Command.h"
 #include "DialogPanel.h"
 #include "text/DisplayText.h"
+#include "text/Font.h"
 #include "text/Format.h"
+#include "text/FontSet.h"
 #include "GameData.h"
 #include "Information.h"
 #include "Interface.h"
@@ -42,7 +44,6 @@ namespace {
 	const string HEADING[6] = {"Type", "Principal", "Interest", "Term", "Payment", ""};
 	// X coordinates of the columns of the table.
 	const int COLUMN[5] = {20, 130, 210, 280, 330};
-	const int EXTRA_X = 410;
 
 	// Maximum number of rows of mortages, etc. to draw.
 	const int MAX_ROWS = 8;
@@ -73,18 +74,21 @@ void BankPanel::Step()
 void BankPanel::Draw()
 {
 	// Draw the "Pay All" button.
-	const Interface *bankUi = GameData::Interfaces().Get(Screen::Width() < 1280 ? "bank (small screen)" : "bank");
+	const Interface *bankUi = GameData::Interfaces().Get(Screen::Width() < 1060 ? "bank (small screen)" : "bank");
 	const Rectangle box = bankUi->GetBox("content");
 	FillShader::Fill(box, ModernShopStyle::Theme("ui/panel"));
-	ModernShopStyle::Border(box, ModernShopStyle::Theme("ui/divider"));
 	const int MIN_X = box.Left();
-	const int FIRST_Y = box.Top();
+	const int FIRST_Y = box.Top() + 94;
 	const int MAX_X = box.Right();
+	FontSet::Get(18).Draw(Format::CreditString(player.Accounts().Credits()),
+		Point(MAX_X - 235, box.Top() + 20), ModernShopStyle::Theme("ui/text primary"));
+	FontSet::Get(14).Draw("AVAILABLE BALANCE", Point(MAX_X - 235, box.Top() + 48),
+		ModernShopStyle::Theme("ui/text secondary"));
 
 	// Set up the table that will contain most of the information.
 	Table table;
 	for(auto x : COLUMN)
-		table.AddColumn(MIN_X + x);
+		table.AddColumn(MIN_X + x * box.Width() / 500.);
 	// The last column is for the "pay extra" button.
 	table.AddColumn(MAX_X - 20, {Alignment::RIGHT});
 	table.SetHighlight(MIN_X + 10, MAX_X - 10);
@@ -325,10 +329,10 @@ bool BankPanel::Click(int x, int y, MouseButton button, int clicks)
 	if(button != MouseButton::LEFT)
 		return false;
 
-	const Interface *bankUi = GameData::Interfaces().Get(Screen::Width() < 1280 ? "bank (small screen)" : "bank");
+	const Interface *bankUi = GameData::Interfaces().Get(Screen::Width() < 1060 ? "bank (small screen)" : "bank");
 	const Rectangle box = bankUi->GetBox("content");
 	const int MIN_X = box.Left();
-	const int FIRST_Y = box.Top();
+	const int FIRST_Y = box.Top() + 94;
 	const int MAX_X = box.Right();
 
 	// Check if the click was on one of the rows of the table that represents a
@@ -337,10 +341,10 @@ bool BankPanel::Click(int x, int y, MouseButton button, int clicks)
 	if(x >= MIN_X && x <= MAX_X && y >= FIRST_Y + 25 && y < maxY)
 	{
 		selectedRow = (y - FIRST_Y - 25) / 20;
-		if(x >= MIN_X + EXTRA_X)
+		if(x >= MAX_X - 110)
 			DoKey(SDLK_RETURN);
 	}
-	else if(x >= MIN_X + EXTRA_X - 10 && x <= MAX_X && y >= FIRST_Y + 230 && y <= FIRST_Y + 250)
+	else if(x >= MAX_X - 120 && x <= MAX_X && y >= FIRST_Y + 230 && y <= FIRST_Y + 250)
 	{
 		// If the player clicks the "apply" button, check if you qualify.
 		if(qualify)

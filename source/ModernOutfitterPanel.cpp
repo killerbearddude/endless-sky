@@ -341,7 +341,8 @@ void ModernOutfitterPanel::DrawControl(const Rectangle &bounds, const string &te
 	const function<void()> &action)
 {
 	FillShader::Fill(bounds, Theme(selected ? "ui/selected" : "ui/raised"));
-	Border(bounds, Theme(selected ? "ui/focus" : "ui/control border"), selected ? 2.f : 1.f);
+	if(selected)
+		FillShader::Fill(Rectangle::FromCorner(bounds.TopLeft(), Point(3, bounds.Height())), Theme("ui/focus"));
 	const Font &font = FontSet::Get(14);
 	const int inset = text == "INSTALLED" || text == "TO INSTALLED" ? 2 : 6;
 	font.Draw({text, {static_cast<int>(bounds.Width() - 2 * inset), Alignment::CENTER, Truncate::MIDDLE}},
@@ -499,8 +500,8 @@ void ModernOutfitterPanel::DrawActions(const Rectangle &bounds)
 	const double width = bounds.Width() - 12;
 	const double rowWidth = (width - 12) / 4.;
 	const pair<OutfitLocation, const char *> sources[] = {
-		{OutfitLocation::Shop, "SHOP"}, {OutfitLocation::Ship, "INSTALLED"},
-		{OutfitLocation::Cargo, "CARGO"}, {OutfitLocation::Storage, "STORAGE"}
+		{OutfitLocation::Shop, "SHOP"}, {OutfitLocation::Ship, "SHIP"},
+		{OutfitLocation::Cargo, "CARGO"}, {OutfitLocation::Storage, "STORE"}
 	};
 	for(int i = 0; i < 4; ++i)
 	{
@@ -529,9 +530,12 @@ void ModernOutfitterPanel::DrawActions(const Rectangle &bounds)
 	const Font &font = FontSet::Get(14);
 	font.Draw("QUANTITY", Point(x, bounds.Top() + 77), Theme("ui/text secondary"));
 	selectedQuantity->SetPosition(Rectangle::FromCorner(Point(x + 76, bounds.Top() + 70), Point(76, 28)));
-	DrawControl(Rectangle::FromCorner(Point(bounds.Right() - 118, bounds.Top() + 70), Point(112, 28)),
-		"TRANSFER", preview && (preview->success || preview->hasEffects),
-		[this]() { CommitSelectedRoute(); });
+	const Rectangle transfer = Rectangle::FromCorner(Point(bounds.Right() - 118, bounds.Top() + 70), Point(112, 28));
+	const bool canTransfer = preview && (preview->success || preview->hasEffects);
+	FillShader::Fill(transfer, Theme(canTransfer ? "ui/focus" : "ui/panel"));
+	font.Draw("TRANSFER", transfer.TopLeft() + Point(19, 8),
+		Theme(canTransfer ? "ui/background" : "ui/text muted"));
+	AddZone(transfer, [this]() { CommitSelectedRoute(); });
 	if(preview)
 	{
 		const int64_t requested = preview->quantityPerShip
@@ -545,9 +549,12 @@ void ModernOutfitterPanel::DrawActions(const Rectangle &bounds)
 			? "Preview: " + to_string(preview->fulfilledQuantity)
 			+ " fulfilled; credits " + to_string(preview->creditsAfter - preview->creditsBefore)
 			: "Unavailable: " + preview->reason;
-		font.Draw({outcome, {static_cast<int>(width), Alignment::LEFT, Truncate::BACK}},
-			Point(x, bounds.Top() + 126), Theme(preview->success || preview->hasEffects
-				? "ui/text primary" : "ui/caution"));
+		WrappedText status(font);
+		status.SetAlignment(Alignment::LEFT);
+		status.SetWrapWidth(static_cast<int>(width));
+		status.Wrap(outcome);
+		status.Draw(Point(x, bounds.Top() + 126), Theme(preview->success || preview->hasEffects
+			? "ui/text primary" : "ui/caution"));
 		string shipsLine;
 		if(preview->quantityPerShip)
 		{
@@ -560,16 +567,17 @@ void ModernOutfitterPanel::DrawActions(const Rectangle &bounds)
 		else
 			shipsLine = selected && (selected->Get("map") || selected->TrueName().ends_with(" License"))
 				? "Permanent purchase: one item" : "Hold quantity is a total";
-		font.Draw({shipsLine, {static_cast<int>(width), Alignment::LEFT, Truncate::BACK}},
-			Point(x, bounds.Top() + 148), Theme("ui/text secondary"));
+		if(status.Height() <= 32 && feedback.empty())
+			font.Draw({shipsLine, {static_cast<int>(width), Alignment::LEFT, Truncate::BACK}},
+				Point(x, bounds.Top() + 166), Theme("ui/text secondary"));
 	}
-	if(!feedback.empty())
+	if(!feedback.empty() && (!preview || preview->success))
 		font.Draw({feedback, {static_cast<int>(width), Alignment::LEFT, Truncate::BACK}},
-			Point(x, bounds.Top() + 170), Theme("ui/text primary"));
+			Point(x, bounds.Top() + 174), Theme("ui/text primary"));
 	font.Draw({"Credits: " + Format::Number(player.Accounts().Credits()) + "   Cargo free: "
 		+ Format::Number(player.Cargo().Free()) + " / " + Format::Number(player.Cargo().Size()),
 		{static_cast<int>(width), Alignment::LEFT, Truncate::BACK}},
-		Point(x, bounds.Top() + 192), Theme("ui/text secondary"));
+		Point(x, bounds.Top() + 198), Theme("ui/text secondary"));
 }
 
 
@@ -591,28 +599,35 @@ void ModernOutfitterPanel::Draw()
 		quantityIsModifier = false;
 		previewDirty = true;
 	}
-	const double left = Screen::Left() + 16;
-	const double right = Screen::Right() - 16;
-	const double top = Screen::Top() + 16;
-	const double bottom = Screen::Bottom() - 16;
+	const double left = Screen::Left() + 12;
+	const double right = Screen::Right() - 12;
+	const double top = Screen::Top() + 10;
+	const double bottom = Screen::Bottom() - 12;
 	const double width = right - left;
 	compact = width < 1040;
 	const Font &font = FontSet::Get(14);
-	font.Draw("MODERN OUTFITTER  |  TRANSACTIONS", Point(left, top + 3), Theme("ui/text primary"));
-	DrawControl(Rectangle::FromCorner(Point(right - 100, top), Point(100, 30)), "CLOSE  ESC", false,
+	FillShader::Fill(Rectangle::FromCorner(Point(Screen::Left(), Screen::Top()),
+		Point(Screen::Width(), 50)), Theme("ui/panel"));
+	FillShader::Fill(Rectangle::FromCorner(Point(Screen::Left(), Screen::Top() + 49),
+		Point(Screen::Width(), 1)), Theme("ui/divider"));
+	FontSet::Get(18).Draw("OUTFITTER", Point(left + 4, top + 4), Theme("ui/text primary"));
+	font.Draw("PORT  /  OUTFITTER", Point(left + 184, top + 8), Theme("ui/text secondary"));
+	DrawControl(Rectangle::FromCorner(Point(right - 104, top), Point(104, 30)), "BACK  ESC", false,
 		[this]() { GetUI().Pop(this); });
-
-	const double controlTop = top + 42;
-	const double tabWidth = min(120., (width - 16) / 5.);
+	const double sideWidth = compact ? 154. : 172.;
+	const double rightWidth = compact ? 0. : min(360., max(310., width * .27));
+	const double centerLeft = left + sideWidth + 8;
+	const double centerWidth = width - sideWidth - rightWidth - (compact ? 8 : 24);
+	const double rightLeft = centerLeft + centerWidth + 8;
+	const double controlTop = top + 50;
+	font.Draw("EQUIPMENT", Point(left + 8, controlTop + 10), Theme("ui/text secondary"));
+	search->SetPosition(Rectangle::FromCorner(Point(centerLeft, controlTop), Point(196, 34)));
+	const double tabWidth = max(54., (centerWidth - 208 - 16) / 5.);
 	const char *sources[] = {"ALL", "SHOP", "INSTALLED", "CARGO", "STORAGE"};
 	for(int i = 0; i < 5; ++i)
-		DrawControl(Rectangle::FromCorner(Point(left + i * (tabWidth + 4), controlTop), Point(tabWidth, 30)),
+		DrawControl(Rectangle::FromCorner(Point(centerLeft + 208 + i * (tabWidth + 4), controlTop), Point(tabWidth, 34)),
 			sources[i], source == static_cast<Source>(i), [this, i]() { source = static_cast<Source>(i); Refresh(); });
-
-	const double searchTop = controlTop + 44;
-	font.Draw("SEARCH", Point(left, searchTop + 8), Theme("ui/text secondary"));
-	search->SetPosition(Rectangle::FromCorner(Point(left + 65, searchTop), Point(max(120., width * .43 - 65), 32)));
-	DrawControl(Rectangle::FromCorner(Point(left + width * .45, searchTop), Point(112, 32)),
+	DrawControl(Rectangle::FromCorner(Point(compact ? centerLeft : rightLeft, controlTop + (compact ? 42 : 0)), Point(112, 34)),
 		sort == Sort::NAME ? "NAME SORT" : "PRICE SORT", false,
 		[this]() { sort = sort == Sort::NAME ? Sort::PRICE : Sort::NAME; Refresh(); });
 	const vector<const Ship *> viewShips = SelectedShipsForView();
@@ -620,33 +635,28 @@ void ModernOutfitterPanel::Draw()
 		? to_string(viewShips.size()) + " SHIPS SELECTED"
 		: (viewShips.front()->GivenName().empty() ? viewShips.front()->DisplayModelName()
 			: viewShips.front()->GivenName()));
-	DrawControl(Rectangle::FromCorner(Point(right - 200, searchTop), Point(200, 32)),
-		"SHIP: " + shipLabel, false, [this]() { CycleShip(); });
-	if(ships.size() > 1)
-		DrawControl(Rectangle::FromCorner(Point(right - 200, searchTop + 38), Point(200, 28)),
-			allShips && !customShipSelection ? "ALL HERE (" + to_string(ships.size()) + ")"
-				: "SELECT ALL HERE", allShips && !customShipSelection,
-			[this]() { allShips = !allShips; customShipSelection = false; customShips.clear(); Refresh(); });
-	font.Draw("F/Tab search   [/] filter   V sort   H ship   A all   0-9 groups   K park   Ctrl+Up/Down reorder",
-		Point(left, searchTop + 54), Theme("ui/text secondary"));
-	font.Draw("B/S/I/U/C/R native actions   G source   T destination   Enter explicit transfer",
-		Point(left, searchTop + 72), Theme("ui/text secondary"));
-
-	const double contentTop = searchTop + 96;
+	if(compact)
+		DrawControl(Rectangle::FromCorner(Point(right - 195, controlTop + 42), Point(195, 28)),
+			"SHIP: " + shipLabel, false, [this]() { CycleShip(); });
+	else
+		font.Draw({"Balance  " + Format::CreditString(player.Accounts().Credits()),
+			{static_cast<int>(rightWidth - 124), Alignment::RIGHT, Truncate::MIDDLE}},
+			Point(rightLeft + 120, controlTop + 9), Theme("ui/text primary"));
+	const double contentTop = top + (compact ? 130 : 96);
 	const double contentHeight = max(80., bottom - contentTop);
-	const double catWidth = compact ? 154. : 190.;
-	const double detailWidth = compact ? 0. : min(350., width * .30);
-	const double fleetHeight = min(contentHeight * .48, max(100., ships.size() * 32. + 40.));
+	const double catWidth = sideWidth;
+	const double fleetHeight = min(contentHeight * .35, max(128., ships.size() * 32. + 42.));
 	categoryBounds = Rectangle::FromCorner(Point(left, contentTop),
-		Point(catWidth, contentHeight - fleetHeight - 6));
-	fleetBounds = Rectangle::FromCorner(Point(left, categoryBounds.Bottom() + 6), Point(catWidth, fleetHeight));
-	rowBounds = Rectangle::FromCorner(Point(left + catWidth + 8, contentTop),
-		Point(width - catWidth - detailWidth - (compact ? 8 : 16), contentHeight));
+		Point(catWidth, contentHeight - fleetHeight - 8));
+	fleetBounds = Rectangle::FromCorner(Point(left, categoryBounds.Bottom() + 8), Point(catWidth, fleetHeight));
+	rowBounds = Rectangle::FromCorner(Point(centerLeft, contentTop),
+		Point(centerWidth, compact ? contentHeight : min(contentHeight * .50,
+			max(220., rows.size() * 52. + 64.))));
 	const double footerHeight = 216.;
 	detailBounds = compact
 		? Rectangle::FromCorner(rowBounds.TopLeft(), Point(rowBounds.Width(), contentHeight - footerHeight))
-		: Rectangle::FromCorner(Point(rowBounds.Right() + 8, contentTop),
-			Point(detailWidth, contentHeight - footerHeight));
+		: Rectangle::FromCorner(Point(centerLeft, rowBounds.Bottom() + 8),
+			Point(centerWidth, bottom - rowBounds.Bottom() - 8));
 	DrawCategories(categoryBounds);
 	DrawFleet(fleetBounds);
 	if(compact && !detailsPage)
@@ -667,10 +677,68 @@ void ModernOutfitterPanel::Draw()
 		{
 			UpdatePreview();
 			DrawDetailsPane(detailBounds);
-			DrawActions(Rectangle::FromCorner(Point(detailBounds.Left(), detailBounds.Bottom()),
-				Point(detailBounds.Width(), footerHeight)));
+			const double actionHeight = 220.;
+			DrawShipContext(Rectangle::FromCorner(Point(rightLeft, contentTop),
+				Point(rightWidth, contentHeight - actionHeight - 8)));
+			DrawActions(Rectangle::FromCorner(Point(rightLeft, bottom - actionHeight),
+				Point(rightWidth, actionHeight)));
 		}
 	}
+}
+
+
+void ModernOutfitterPanel::DrawShipContext(const Rectangle &bounds)
+{
+	FillShader::Fill(bounds, Theme("ui/panel"));
+	const Font &font = FontSet::Get(14);
+	font.Draw("CURRENT SHIP", bounds.TopLeft() + Point(14, 12), Theme("ui/text secondary"));
+	const vector<const Ship *> selectedShips = SelectedShipsForView();
+	if(selectedShips.empty())
+	{
+		font.Draw("No ship selected", bounds.TopLeft() + Point(14, 56), Theme("ui/text primary"));
+		return;
+	}
+	const Ship *ship = selectedShips.front();
+	const string name = ship->GivenName().empty() ? ship->DisplayModelName() : ship->GivenName();
+	if(const Sprite *sprite = ship->Thumbnail().GetSprite(); sprite && sprite->IsLoaded())
+		SpriteShader::Draw(sprite, Point(bounds.Center().X(), bounds.Top() + 78),
+			min(118. / max(sprite->Width(), sprite->Height()), 2.));
+	FontSet::Get(18).Draw({name, {static_cast<int>(bounds.Width() - 28), Alignment::CENTER, Truncate::MIDDLE}},
+		bounds.TopLeft() + Point(14, 137), Theme("ui/text primary"));
+	font.Draw({ship->DisplayModelName(), {static_cast<int>(bounds.Width() - 28), Alignment::CENTER, Truncate::MIDDLE}},
+		bounds.TopLeft() + Point(14, 162), Theme("ui/text secondary"));
+	DrawControl(Rectangle::FromCorner(bounds.TopLeft() + Point(14, 188), Point(bounds.Width() - 28, 30)),
+		"SELECT SHIP  /  " + name, false, [this]() { CycleShip(); });
+	if(ships.size() > 1)
+		DrawControl(Rectangle::FromCorner(bounds.TopLeft() + Point(14, 223), Point(bounds.Width() - 28, 28)),
+			allShips && !customShipSelection ? "ALL SHIPS HERE SELECTED" : "SELECT ALL SHIPS HERE",
+			allShips && !customShipSelection,
+			[this]() { allShips = !allShips; customShipSelection = false; customShips.clear(); Refresh(); });
+	const double statTop = bounds.Top() + (ships.size() > 1 ? 260 : 230);
+	FillShader::Fill(Rectangle::FromCorner(Point(bounds.Left() + 14, statTop),
+		Point(bounds.Width() - 28, 1)), Theme("ui/divider"));
+	font.Draw("CAPACITY / PREVIEW", Point(bounds.Left() + 14, statTop + 10), Theme("ui/text secondary"));
+	const ShipEffect *effect = nullptr;
+	if(preview)
+		for(const ShipEffect &candidate : preview->ships)
+			if(candidate.fleetIndex < player.Ships().size() && player.Ships()[candidate.fleetIndex].get() == ship)
+			{
+				effect = &candidate;
+				break;
+			}
+	auto value = [&](const string &label, double before, double after, double y)
+	{
+		font.Draw(label, Point(bounds.Left() + 14, y), Theme("ui/text secondary"));
+		const string amount = Format::Number(before) + (before == after ? "" : "  ->  " + Format::Number(after));
+		font.Draw({amount, {static_cast<int>(bounds.Width() - 112), Alignment::RIGHT, Truncate::MIDDLE}},
+			Point(bounds.Left() + 98, y), Theme(before == after ? "ui/text primary" : "ui/positive"));
+	};
+	value("Outfit space", effect ? effect->outfitSpaceBefore : ship->Attributes().Get("outfit space"),
+		effect ? effect->outfitSpaceAfter : ship->Attributes().Get("outfit space"), statTop + 32);
+	value("Cargo space", effect ? effect->cargoSpaceBefore : ship->Attributes().Get("cargo space"),
+		effect ? effect->cargoSpaceAfter : ship->Attributes().Get("cargo space"), statTop + 52);
+	value("Ship mass", effect ? effect->massBefore : ship->Mass(),
+		effect ? effect->massAfter : ship->Mass(), statTop + 72);
 }
 
 
@@ -698,7 +766,7 @@ void ModernOutfitterPanel::DrawFleet(const Rectangle &bounds)
 		const bool isSelected = find(selectedShips.begin(), selectedShips.end(), ship) != selectedShips.end();
 		FillShader::Fill(row, Theme(isSelected ? "ui/selected" : "ui/raised"));
 		if(isSelected)
-			Border(row, Theme("ui/focus"), 2.f);
+			FillShader::Fill(Rectangle::FromCorner(row.TopLeft(), Point(3, row.Height())), Theme("ui/focus"));
 		const string name = ship->GivenName().empty() ? ship->DisplayModelName() : ship->GivenName();
 		font.Draw({name, {static_cast<int>(row.Width() - 40), Alignment::LEFT, Truncate::MIDDLE}},
 			row.TopLeft() + Point(5, 8), Theme("ui/text primary"));
@@ -736,7 +804,7 @@ void ModernOutfitterPanel::DrawCategories(const Rectangle &bounds)
 			continue;
 		FillShader::Fill(row, Theme(categories[i] == category ? "ui/selected" : "ui/panel"));
 		if(categories[i] == category)
-			Border(row, Theme("ui/focus"), 2.f);
+			FillShader::Fill(Rectangle::FromCorner(row.TopLeft(), Point(3, row.Height())), Theme("ui/focus"));
 		font.Draw({categories[i], {static_cast<int>(row.Width() - 12), Alignment::LEFT, Truncate::MIDDLE}},
 			row.TopLeft() + Point(6, 8), Theme("ui/text primary"));
 		if(row.Top() >= bounds.Top() + 34 && row.Bottom() <= bounds.Bottom())
@@ -768,7 +836,7 @@ void ModernOutfitterPanel::DrawCatalog(const Rectangle &bounds)
 			continue;
 		FillShader::Fill(row, Theme(outfit == selected ? "ui/selected" : "ui/raised"));
 		if(outfit == selected)
-			Border(row, Theme("ui/focus"), 2.f);
+			FillShader::Fill(Rectangle::FromCorner(row.TopLeft(), Point(3, row.Height())), Theme("ui/focus"));
 		if(const Sprite *sprite = outfit->Thumbnail().GetSprite(); sprite && sprite->IsLoaded())
 			SpriteShader::Draw(sprite, row.TopLeft() + Point(25, 25), min(36. / max(sprite->Width(), sprite->Height()), 1.));
 		const double nameWidth = max(40., row.Width() - 185);
@@ -804,10 +872,11 @@ void ModernOutfitterPanel::DrawDetailsPane(const Rectangle &bounds)
 	const double x = bounds.Left() + 12;
 	const double width = bounds.Width() - 24;
 	const double titleInset = compact && detailsPage ? 110. : 12.;
-	font.Draw({selected->DisplayName(), {static_cast<int>(bounds.Width() - titleInset - 12), Alignment::LEFT, Truncate::MIDDLE}},
+	FontSet::Get(18).Draw({selected->DisplayName(), {static_cast<int>(bounds.Width() - titleInset - 12), Alignment::LEFT, Truncate::MIDDLE}},
 		bounds.TopLeft() + Point(titleInset, 10), Theme("ui/text primary"));
 	WrappedText description(font);
-	description.SetWrapWidth(max(80, static_cast<int>(width)));
+	description.SetAlignment(Alignment::LEFT);
+	description.SetWrapWidth(max(80, static_cast<int>(width - 170)));
 	description.Wrap(selected->Description());
 	// Draw factual fitting data locally: OutfitInfoDisplay's requirements panel
 	// also includes a depreciation-derived transaction price.
@@ -859,7 +928,7 @@ void ModernOutfitterPanel::DrawDetailsPane(const Rectangle &bounds)
 		}
 		return 32. + 20. * lines;
 	};
-	const double contentHeight = 322 + description.Height() + fittingHeight + info.AttributesHeight()
+	const double contentHeight = 250 + (compact ? 110. : 0.) + description.Height() + fittingHeight + info.AttributesHeight()
 		+ effectHeight(preview, false) + effectHeight(lastResult, true);
 	detailScroll.SetDisplaySize(viewport.Height());
 	detailScroll.SetMaxValue(contentHeight);
@@ -867,29 +936,26 @@ void ModernOutfitterPanel::DrawDetailsPane(const Rectangle &bounds)
 	Clip(viewport);
 	const Sprite *sprite = selected->Thumbnail().GetSprite();
 	if(sprite && sprite->IsLoaded())
-		SpriteShader::Draw(sprite, Point(bounds.Center().X(), viewport.Top() + 55 - offset),
-			min(90. / max(sprite->Width(), sprite->Height()), 1.));
-	double y = viewport.Top() + 110 - offset;
-	font.Draw("Base price: " + Format::Number(selected->Cost()) + " credits", Point(x, y), Theme("ui/text secondary"));
-	y += 24;
+		SpriteShader::Draw(sprite, Point(x + 76, viewport.Top() + 85 - offset),
+			min(136. / max(sprite->Width(), sprite->Height()), 2.));
+	const double heroX = x + 160;
+	font.Draw("PRICE", Point(heroX, viewport.Top() + 13 - offset), Theme("ui/text secondary"));
+	FontSet::Get(18).Draw(Format::CreditString(selected->Cost()),
+		Point(heroX, viewport.Top() + 33 - offset), Theme("ui/text primary"));
+	font.Draw("Installed " + to_string(Installed(selected)) + "    Cargo " +
+		to_string(player.Cargo().Get(selected)) + "    Storage " + to_string(StorageCount(selected)),
+		Point(heroX, viewport.Top() + 64 - offset), Theme("ui/text secondary"));
 	font.Draw("Sold here: " + string(stock.Has(selected) ? "yes" : "no")
 		+ "   Local stock: " + to_string(max(0, player.Stock(selected))),
-		Point(x, y), Theme("ui/text secondary"));
-	y += 22;
+		Point(heroX, viewport.Top() + 87 - offset), Theme("ui/text secondary"));
+	description.Draw(Point(heroX, viewport.Top() + 114 - offset), Theme("ui/text primary"));
+	double y = viewport.Top() + max(177., 122. + description.Height()) - offset;
 	if(OwnedLicense(selected))
 	{
 		font.Draw("License held: yes", Point(x, y), Theme("ui/text secondary"));
 		y += 22;
 	}
-	font.Draw("Installed: " + to_string(Installed(selected)) +
-		(viewShips.empty() ? " (no ship selected)" : (viewShips.size() > 1
-			? " across selected ships" : " on selected ship")),
-		Point(x, y), Theme("ui/text secondary"));
-	y += 22;
-	font.Draw("Fleet cargo: " + to_string(player.Cargo().Get(selected))
-		+ "   Local storage: " + to_string(StorageCount(selected)), Point(x, y), Theme("ui/text secondary"));
-	y += 24;
-	if(!viewShips.empty())
+	if(compact && !viewShips.empty())
 	{
 		const Ship *ship = viewShips.front();
 		const string shipName = ship->GivenName().empty() ? ship->DisplayModelName() :
@@ -916,10 +982,7 @@ void ModernOutfitterPanel::DrawDetailsPane(const Rectangle &bounds)
 		font.Draw("Engine: " + space("engine capacity"), Point(x, y), Theme("ui/text secondary"));
 		y += 28;
 	}
-	else
-		y += 12;
-	description.Draw(Point(x, y), Theme("ui/text primary"));
-	y += description.Height() + 8;
+	y += 12;
 	if(!fittingData.empty())
 	{
 		font.Draw("FITTING DATA", Point(x, y), Theme("ui/text secondary"));

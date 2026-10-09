@@ -156,8 +156,8 @@ void ModernShipyardPanel::DrawControl(const Rectangle &bounds, const string &lab
 	const function<void()> &action, bool enabled)
 {
 	FillShader::Fill(bounds, Theme(selected ? "ui/selected" : "ui/raised"));
-	Border(bounds, Theme(selected ? "ui/focus" : (enabled ? "ui/control border" : "ui/divider")),
-		selected ? 2.f : 1.f);
+	if(selected)
+		FillShader::Fill(Rectangle::FromCorner(bounds.TopLeft(), Point(3, bounds.Height())), Theme("ui/focus"));
 	FontSet::Get(14).Draw({label, {static_cast<int>(bounds.Width() - 12), Alignment::CENTER, Truncate::MIDDLE}},
 		bounds.TopLeft() + Point(6, 8), Theme(enabled ? "ui/text primary" : "ui/text muted"));
 	AddZone(bounds, action);
@@ -180,36 +180,45 @@ void ModernShipyardPanel::Draw()
 		selectedQuantity->SetText("1");
 		quantityIsModifier = false;
 	}
-	const double left = Screen::Left() + 16;
-	const double right = Screen::Right() - 16;
-	const double top = Screen::Top() + 16;
-	const double bottom = Screen::Bottom() - 16;
+	const double left = Screen::Left() + 12;
+	const double right = Screen::Right() - 12;
+	const double top = Screen::Top() + 10;
+	const double bottom = Screen::Bottom() - 12;
 	const double width = right - left;
 	compact = width < 1040;
-	FontSet::Get(14).Draw("MODERN SHIPYARD", Point(left, top + 4), Theme("ui/text primary"));
-	DrawControl(Rectangle::FromCorner(Point(right - 100, top), Point(100, 30)), "CLOSE  ESC", false,
+	FillShader::Fill(Rectangle::FromCorner(Point(Screen::Left(), Screen::Top()),
+		Point(Screen::Width(), 50)), Theme("ui/panel"));
+	FillShader::Fill(Rectangle::FromCorner(Point(Screen::Left(), Screen::Top() + 49),
+		Point(Screen::Width(), 1)), Theme("ui/divider"));
+	FontSet::Get(18).Draw("SHIPYARD", Point(left + 4, top + 4), Theme("ui/text primary"));
+	FontSet::Get(14).Draw("PORT  /  SHIPYARD", Point(left + 184, top + 8), Theme("ui/text secondary"));
+	DrawControl(Rectangle::FromCorner(Point(right - 104, top), Point(104, 30)), "BACK  ESC", false,
 		[this]() { ShopPanel::KeyDown(SDLK_ESCAPE, 0, Command(), true); });
-	const double searchTop = top + 46;
-	FontSet::Get(14).Draw("SEARCH", Point(left, searchTop + 8), Theme("ui/text secondary"));
-	search->SetPosition(Rectangle::FromCorner(Point(left + 65, searchTop), Point(max(120., width * .42 - 65), 32)));
+	const double sideWidth = compact ? 154. : 172.;
+	const double detailsWidth = compact ? 0. : min(500., max(420., width * .39));
+	const double centerLeft = left + sideWidth + 8;
+	const double centerWidth = width - sideWidth - detailsWidth - (compact ? 8 : 24);
+	const double detailLeft = centerLeft + centerWidth + 8;
+	const double searchTop = top + 50;
+	FontSet::Get(14).Draw("VESSELS", Point(left + 8, searchTop + 10), Theme("ui/text secondary"));
+	search->SetPosition(Rectangle::FromCorner(Point(centerLeft, searchTop), Point(min(340., centerWidth - 145), 34)));
 	const char *sortName = sort == Sort::NATIVE ? "NATIVE ORDER" : sort == Sort::NAME ? "NAME SORT" : "PRICE SORT";
-	DrawControl(Rectangle::FromCorner(Point(left + width * .44, searchTop), Point(132, 32)), sortName, false,
+	DrawControl(Rectangle::FromCorner(Point(centerLeft + centerWidth - 132, searchTop), Point(132, 34)), sortName, false,
 		[this]() { sort = static_cast<Sort>((static_cast<int>(sort) + 1) % 3); Refresh(); });
-	FontSet::Get(14).Draw("F/Tab search   Left/Right category   V sort   B buy   S sell   U sell hull   K park   0-9 groups",
-		Point(left, searchTop + 43), Theme("ui/text secondary"));
-	const double contentTop = searchTop + 68;
+	if(!compact)
+		FontSet::Get(14).Draw({"Balance  " + Format::CreditString(player.Accounts().Credits()),
+			{static_cast<int>(detailsWidth - 16), Alignment::RIGHT, Truncate::MIDDLE}},
+			Point(detailLeft + 8, searchTop + 9), Theme("ui/text primary"));
+	const double contentTop = top + 96;
 	const double contentHeight = max(80., bottom - contentTop);
-	const double sideWidth = compact ? 154. : 190.;
-	const double detailsWidth = compact ? 0. : min(350., width * .30);
-	const double fleetHeight = min(contentHeight * .45, max(100., fleet.size() * 32. + 40.));
+	const double fleetHeight = min(contentHeight * .38, max(128., fleet.size() * 32. + 42.));
 	categoryBounds = Rectangle::FromCorner(Point(left, contentTop), Point(sideWidth, contentHeight - fleetHeight - 6));
 	fleetBounds = Rectangle::FromCorner(Point(left, categoryBounds.Bottom() + 6), Point(sideWidth, fleetHeight));
-	rowBounds = Rectangle::FromCorner(Point(left + sideWidth + 8, contentTop),
-		Point(width - sideWidth - detailsWidth - (compact ? 8 : 16), contentHeight));
-	const double actionHeight = 162.;
+	rowBounds = Rectangle::FromCorner(Point(centerLeft, contentTop), Point(centerWidth, contentHeight));
+	const double actionHeight = 184.;
 	detailBounds = compact
 		? Rectangle::FromCorner(rowBounds.TopLeft(), Point(rowBounds.Width(), contentHeight - actionHeight))
-		: Rectangle::FromCorner(Point(rowBounds.Right() + 8, contentTop), Point(detailsWidth, contentHeight - actionHeight));
+		: Rectangle::FromCorner(Point(detailLeft, contentTop), Point(detailsWidth, contentHeight - actionHeight - 8));
 	DrawCategories(categoryBounds);
 	DrawFleet(fleetBounds);
 	if(compact && detailsPage)
@@ -226,7 +235,7 @@ void ModernShipyardPanel::Draw()
 		if(!compact)
 		{
 			DrawDetailsPane(detailBounds);
-			DrawActions(Rectangle::FromCorner(Point(detailBounds.Left(), detailBounds.Bottom()),
+			DrawActions(Rectangle::FromCorner(Point(detailBounds.Left(), detailBounds.Bottom() + 8),
 				Point(detailBounds.Width(), actionHeight)));
 		}
 	}
@@ -253,13 +262,14 @@ void ModernShipyardPanel::DrawCategories(const Rectangle &bounds)
 			continue;
 		FillShader::Fill(row, Theme(categoryNames[i] == category ? "ui/selected" : "ui/panel"));
 		if(categoryNames[i] == category)
-			Border(row, Theme("ui/focus"), 2.f);
+			FillShader::Fill(Rectangle::FromCorner(row.TopLeft(), Point(3, row.Height())), Theme("ui/focus"));
 		FontSet::Get(14).Draw({categoryNames[i], {static_cast<int>(row.Width() - 12), Alignment::LEFT, Truncate::MIDDLE}},
 			row.TopLeft() + Point(6, 8), Theme("ui/text primary"));
 		if(row.Top() >= viewport.Top() && row.Bottom() <= viewport.Bottom())
 			AddZone(row, [this, i]() { category = categoryNames[i]; rowScroll.Set(0., 0); Refresh(); });
 	}
 	EndClip();
+
 }
 
 
@@ -284,7 +294,7 @@ void ModernShipyardPanel::DrawCatalog(const Rectangle &bounds)
 			continue;
 		FillShader::Fill(row, Theme(ship == selected ? "ui/selected" : "ui/raised"));
 		if(ship == selected)
-			Border(row, Theme("ui/focus"), 2.f);
+			FillShader::Fill(Rectangle::FromCorner(row.TopLeft(), Point(3, row.Height())), Theme("ui/focus"));
 		if(const Sprite *sprite = ship->Thumbnail().GetSprite(); sprite && sprite->IsLoaded())
 			SpriteShader::Draw(sprite, row.TopLeft() + Point(25, 25),
 				min(36. / max(sprite->Width(), sprite->Height()), 1.));
@@ -298,6 +308,42 @@ void ModernShipyardPanel::DrawCatalog(const Rectangle &bounds)
 			AddZone(row, [this, i]() { SelectRow(i); if(compact) detailsPage = true; });
 	}
 	EndClip();
+	// Sparse catalogs leave room for the selected vessel to carry the visual weight
+	// of this screen. The row list and its hit zones remain unchanged.
+	if(selected && rows.size() * 52. < viewport.Height() - 240. && rowScroll.Value() == 0.)
+	{
+		const double showcaseTop = viewport.Top() + rows.size() * 52. + 16.;
+		const Rectangle showcase = Rectangle::FromCorner(Point(bounds.Left() + 12, showcaseTop),
+			Point(bounds.Width() - 24, min(500., viewport.Bottom() - showcaseTop - 12.)));
+		FillShader::Fill(showcase, Theme("ui/raised"));
+		font.Draw("SELECTED VESSEL", showcase.TopLeft() + Point(16, 14), Theme("ui/text secondary"));
+		const bool wide = showcase.Width() > 700.;
+		const double artX = wide ? showcase.Left() + showcase.Width() * .30 : showcase.Center().X();
+		const double artY = wide ? showcase.Center().Y() : showcase.Top() + min(145., showcase.Height() * .41);
+		if(const Sprite *sprite = selected->Thumbnail().GetSprite(); sprite && sprite->IsLoaded())
+			SpriteShader::Draw(sprite, Point(artX, artY),
+				min(235. / max(sprite->Width(), sprite->Height()), 2.5));
+		const double textX = wide ? showcase.Left() + showcase.Width() * .55 : showcase.Left() + 16.;
+		const double textY = wide ? showcase.Top() + 94. : showcase.Bottom() - 92.;
+		const double textWidth = wide ? showcase.Right() - textX - 16. : showcase.Width() - 32.;
+		FontSet::Get(18).Draw({selected->DisplayModelName(),
+			{static_cast<int>(textWidth), Alignment::LEFT, Truncate::MIDDLE}},
+			Point(textX, textY), Theme("ui/text primary"));
+		font.Draw({selected->Attributes().Category(),
+			{static_cast<int>(textWidth), Alignment::LEFT, Truncate::MIDDLE}},
+			Point(textX, textY + 29), Theme("ui/text secondary"));
+		font.Draw(Format::CreditString(selected->Cost()),
+			Point(textX, textY + 57), Theme("ui/text primary"));
+		if(wide)
+		{
+			FillShader::Fill(Rectangle::FromCorner(Point(textX, textY + 90), Point(textWidth, 1)),
+				Theme("ui/divider"));
+			font.Draw("Cargo space  " + Format::Number(selected->Attributes().Get("cargo space")),
+				Point(textX, textY + 108), Theme("ui/text secondary"));
+			font.Draw("Bunks  " + Format::Number(selected->Attributes().Get("bunks")),
+				Point(textX, textY + 132), Theme("ui/text secondary"));
+		}
+	}
 }
 
 
@@ -320,7 +366,7 @@ void ModernShipyardPanel::DrawFleet(const Rectangle &bounds)
 			continue;
 		FillShader::Fill(row, Theme(playerShips.contains(const_cast<Ship *>(ship)) ? "ui/selected" : "ui/raised"));
 		if(playerShips.contains(const_cast<Ship *>(ship)))
-			Border(row, Theme("ui/focus"), 2.f);
+			FillShader::Fill(Rectangle::FromCorner(row.TopLeft(), Point(3, row.Height())), Theme("ui/focus"));
 		const string name = ship->GivenName().empty() ? ship->DisplayModelName() : ship->GivenName();
 		FontSet::Get(14).Draw({name, {static_cast<int>(row.Width() - 40), Alignment::LEFT, Truncate::MIDDLE}},
 			row.TopLeft() + Point(6, 8), Theme("ui/text primary"));
@@ -353,7 +399,7 @@ void ModernShipyardPanel::DrawDetailsPane(const Rectangle &bounds)
 		return;
 	}
 	const double titleInset = compact && detailsPage ? 110. : 12.;
-	font.Draw({selected->DisplayModelName(), {static_cast<int>(bounds.Width() - titleInset - 12), Alignment::LEFT, Truncate::MIDDLE}},
+	FontSet::Get(18).Draw({selected->DisplayModelName(), {static_cast<int>(bounds.Width() - titleInset - 12), Alignment::LEFT, Truncate::MIDDLE}},
 		bounds.TopLeft() + Point(titleInset, 10), Theme("ui/text primary"));
 	shipInfo.Update(*selected, player, hasFleetCapacity, false, true);
 	const int64_t shipPrice = player.StockDepreciation().Value(*selected, day);
@@ -368,16 +414,21 @@ void ModernShipyardPanel::DrawDetailsPane(const Rectangle &bounds)
 	const Rectangle viewport = Rectangle::FromCorner(bounds.TopLeft() + Point(1, 40),
 		Point(bounds.Width() - 2, bounds.Height() - 41));
 	detailScroll.SetDisplaySize(viewport.Height());
-	detailScroll.SetMaxValue(175. + (licenseCost > 0 ? 25. : licenseCost < 0 ? blockedLicense.Height() : 0.)
+	detailScroll.SetMaxValue(248. + (licenseCost > 0 ? 25. : licenseCost < 0 ? blockedLicense.Height() : 0.)
 		+ shipInfo.DescriptionHeight() + shipInfo.AttributesHeight() + shipInfo.OutfitsHeight());
 	Clip(viewport);
 	if(const Sprite *sprite = selected->Thumbnail().GetSprite(); sprite && sprite->IsLoaded())
-		SpriteShader::Draw(sprite, Point(bounds.Center().X(), viewport.Top() + 55 - detailScroll.Value()),
-			min(90. / max(sprite->Width(), sprite->Height()), 1.));
-	const double contentX = compact ? bounds.Center().X() - 150. : bounds.Left() + 12.;
-	double y = viewport.Top() + 112 - detailScroll.Value();
-	font.Draw("Ship price: " + Format::CreditString(shipPrice), Point(contentX, y), Theme("ui/text secondary"));
-	y += 25;
+		SpriteShader::Draw(sprite, Point(bounds.Left() + 105, viewport.Top() + 96 - detailScroll.Value()),
+			min(174. / max(sprite->Width(), sprite->Height()), 2.));
+	const double contentX = compact ? bounds.Center().X() - 150. : bounds.Left() + 14.;
+	const double priceX = bounds.Left() + (compact ? 225. : 210.);
+	font.Draw("PURCHASE PRICE", Point(priceX, viewport.Top() + 23 - detailScroll.Value()), Theme("ui/text secondary"));
+	FontSet::Get(18).Draw(Format::CreditString(shipPrice),
+		Point(priceX, viewport.Top() + 47 - detailScroll.Value()), Theme("ui/text primary"));
+	font.Draw({selected->Attributes().Category(),
+		{static_cast<int>(bounds.Width() - 225), Alignment::LEFT, Truncate::MIDDLE}},
+		Point(priceX, viewport.Top() + 78 - detailScroll.Value()), Theme("ui/text secondary"));
+	double y = viewport.Top() + 188 - detailScroll.Value();
 	if(licenseCost < 0)
 	{
 		blockedLicense.Draw(Point(contentX, y), Theme("ui/text secondary"));
@@ -409,15 +460,21 @@ void ModernShipyardPanel::DrawActions(const Rectangle &bounds)
 	FillShader::Fill(bounds, Theme("ui/panel"));
 	Border(bounds, Theme("ui/divider"));
 	const Font &font = FontSet::Get(14);
-	font.Draw("Credits: " + Format::CreditString(player.Accounts().Credits()),
-		bounds.TopLeft() + Point(10, 10), Theme("ui/text primary"));
+	font.Draw("TRANSACTION", bounds.TopLeft() + Point(14, 12), Theme("ui/text secondary"));
+	FontSet::Get(18).Draw(Format::CreditString(player.Accounts().Credits()),
+		bounds.TopLeft() + Point(14, 34), Theme("ui/text primary"));
 	const TransactionResult buy = CanDoBuyButton();
 	const string buyReason = buy.HasMessage() ? buy.Message() : "Select a ship to buy.";
 	if(!buy)
-		font.Draw({buyReason, {static_cast<int>(bounds.Width() - 20), Alignment::LEFT, Truncate::MIDDLE}},
-			bounds.TopLeft() + Point(10, 33), Theme("ui/text secondary"));
+	{
+		WrappedText reason(font);
+		reason.SetAlignment(Alignment::LEFT);
+		reason.SetWrapWidth(static_cast<int>(bounds.Width() - 28));
+		reason.Wrap(buyReason);
+		reason.Draw(bounds.TopLeft() + Point(14, 62), Theme("ui/caution"));
+	}
 	const double buttonWidth = (bounds.Width() - 28) / 3.;
-	const double buttonY = bounds.Top() + 63;
+	const double buttonY = bounds.Top() + 104;
 	DrawControl(Rectangle::FromCorner(Point(bounds.Left() + 7, buttonY), Point(buttonWidth, 32)),
 		"BUY  B", false, [this, buy, buyReason]() {
 			if(buy) NativeAction('b');
@@ -433,11 +490,11 @@ void ModernShipyardPanel::DrawActions(const Rectangle &bounds)
 			if(playerShips.empty()) GetUI().Push(DialogPanel::Info("Select an owned ship to sell."));
 			else NativeAction('u');
 		}, !playerShips.empty());
-	font.Draw("Quantity:", bounds.TopLeft() + Point(10, 112), Theme("ui/text secondary"));
-	selectedQuantity->SetPosition(Rectangle::FromCorner(bounds.TopLeft() + Point(85, 106), Point(86, 22)));
+	font.Draw("Quantity:", bounds.TopLeft() + Point(14, 148), Theme("ui/text secondary"));
+	selectedQuantity->SetPosition(Rectangle::FromCorner(bounds.TopLeft() + Point(89, 142), Point(86, 22)));
 	font.Draw(playerShips.empty() ? "Select an owned ship to sell." :
 		to_string(playerShips.size()) + " owned ship(s) selected.",
-		bounds.TopLeft() + Point(10, 139), Theme("ui/text secondary"));
+		bounds.TopLeft() + Point(200, 148), Theme("ui/text secondary"));
 }
 
 

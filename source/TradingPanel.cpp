@@ -93,12 +93,11 @@ void TradingPanel::Step()
 void TradingPanel::Draw()
 {
 	Information info;
-	const Interface *tradeUi = GameData::Interfaces().Get(Screen::Width() < 1280 ? "trade (small screen)" : "trade");
+	const Interface *tradeUi = GameData::Interfaces().Get(Screen::Width() < 1060 ? "trade (small screen)" : "trade");
 	Rectangle box = tradeUi->GetBox("content");
 	FillShader::Fill(box, ModernShopStyle::Theme("ui/panel"));
-	ModernShopStyle::Border(box, ModernShopStyle::Theme("ui/divider"));
 	int minX = box.Left();
-	int firstY = box.Top();
+	int firstY = box.Top() + 94;
 	int nameX = tradeUi->GetValue("column: name");
 	int priceX = tradeUi->GetValue("column: price");
 	int levelX = tradeUi->GetValue("column: price level");
@@ -285,10 +284,10 @@ bool TradingPanel::Click(int x, int y, MouseButton button, int clicks)
 	if(button != MouseButton::LEFT)
 		return false;
 
-	const Interface *tradeUi = GameData::Interfaces().Get(Screen::Width() < 1280 ? "trade (small screen)" : "trade");
+	const Interface *tradeUi = GameData::Interfaces().Get(Screen::Width() < 1060 ? "trade (small screen)" : "trade");
 	Rectangle box = tradeUi->GetBox("content");
 	int minX = box.Left();
-	int firstY = box.Top();
+	int firstY = box.Top() + 94;
 	int maxX = box.Right();
 	int buyX = tradeUi->GetValue("column: buy");
 	int sellX = tradeUi->GetValue("column: sell");

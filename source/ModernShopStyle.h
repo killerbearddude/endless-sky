@@ -12,6 +12,8 @@ Foundation, either version 3 of the License, or (at your option) any later versi
 #include "Command.h"
 #include "Edit.h"
 #include "GameData.h"
+#include "text/Font.h"
+#include "text/FontSet.h"
 #include "shader/LineShader.h"
 #include "opengl.h"
 #include "Rectangle.h"
@@ -72,7 +74,10 @@ namespace ModernShopStyle {
 		void Draw() override
 		{
 			Edit::Draw();
-			Border(Position(), Theme(HasFocus() ? "ui/focus" : "ui/control border"), HasFocus() ? 2.f : 1.f);
+			if(Text().empty() && !HasFocus())
+				FontSet::Get(14).Draw("Search...", Position().TopLeft() + Point(8, 8), Theme("ui/text muted"));
+			if(HasFocus())
+				Border(Position(), Theme("ui/focus"), 2.f);
 		}
 	};
 }

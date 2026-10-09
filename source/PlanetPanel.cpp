@@ -215,6 +215,8 @@ void PlanetPanel::Draw()
 	info.SetString("date", player.GetDate().ToString());
 	info.SetString("credits", Format::CreditString(player.Accounts().Credits()));
 	info.SetString("service title", "PLANET OVERVIEW");
+	if(!selectedPanel)
+		info.SetCondition("overview");
 	if(selectedPanel)
 	{
 		info.SetCondition("in service");
@@ -269,7 +271,7 @@ void PlanetPanel::Draw()
 			info.SetCondition("has outfitter");
 	}
 
-	const Interface *ui = GameData::Interfaces().Get(Screen::Width() < 1280 ? "planet (small screen)" : "planet");
+	const Interface *ui = GameData::Interfaces().Get(Screen::Width() < 1060 ? "planet (small screen)" : "planet");
 	ui->Draw(info, this);
 
 	// The description text needs to be updated because player conditions can be changed
@@ -399,7 +401,7 @@ bool PlanetPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, b
 void PlanetPanel::Resize()
 {
 	const Interface &planetInterface = *GameData::Interfaces().Get(
-		Screen::Width() < 1280 ? "planet (small screen)" : "planet");
+		Screen::Width() < 1060 ? "planet (small screen)" : "planet");
 	description->SetRect(planetInterface.GetBox("content"));
 }
 
