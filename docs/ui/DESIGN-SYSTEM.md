@@ -2,6 +2,12 @@
 
 Status: initial M0 contract with an M1-A additive native palette and opt-in proof screen. The approved palette specification defines the semantic sRGB roles below. The approved browser prototype at `ed44a8a` supplies hierarchy and interaction direction; its illustrative ship, static catalog, base prices, undo/reset and browser layout do not define native gameplay. Supplemental color concept imagery informs atmosphere and balance only, not layout, controls, or mechanics.
 
+## Canonical visual references
+
+The approved visual references are stored under [`references/outfitter/`](references/outfitter/README.md). [`reference.png`](references/outfitter/reference.png) is the primary layout and composition target. [`desktop-final.png`](references/outfitter/desktop-final.png) documents the implemented browser interaction model; [`cargo-installed.png`](references/outfitter/cargo-installed.png) documents transaction feedback states; and [`compact-1280.png`](references/outfitter/compact-1280.png) documents compact behavior. [`endless_sky_ui_palette.md`](references/endless_sky_ui_palette.md) defines semantic color roles only and cannot substitute for the layout references.
+
+Existing native gameplay behavior remains authoritative whenever a design reference conflicts with game mechanics.
+
 ## Color roles
 
 | Role | Reference | Use |

@@ -207,3 +207,11 @@ Branch `codex/m4-landed-services` starts at accepted M3 R1 commit `0022ad82be2c0
 The Debug native `endless-sky` target built successfully. An isolated Xvfb 1280×800 pass used a disposable Earth pilot with a save-local Basic Ships yard and traversed landed shell → Trading → Bank → Hiring → modern Outfitter → modern Shipyard → Depart, returning to the shell between services. The pass reached flight; service panels and controls were visible without an obvious clip or entry/return loop. A Trading header alignment issue found in that pass was corrected and visually rechecked on the final interface data. This is Codex-host visual/input evidence, not owner or human usability acceptance.
 
 No broad CTest suite, benchmark, viewport matrix, plugin matrix, individual bank/trade/hiring transaction audit, or mission-permutation run was performed for M4. Native dialogs used by these workflows retain their existing presentation, matching the dialogs already used by the modern shops. Other service content outside the M4 target remains on its native screen.
+
+## M4 — Landed Services and Navigation: closure
+
+Status: **COMPLETE**
+
+Accepted implementation commit: `2de60e8eb689b590a212bbfd43a900a471f61222`
+
+M4 implemented the landed shell, Trading, Bank, Hiring, and navigation into the modern Outfitter and Shipyard. The focused native smoke flow passed. Broad regression testing was intentionally outside M4 scope. M4 met its functional implementation scope; owner review identified visual-design drift from the approved reference set. That correction belongs to a separate follow-up milestone before M5 and is not an M4 failure. The canonical reference order is documented in [`references/outfitter/README.md`](references/outfitter/README.md).
