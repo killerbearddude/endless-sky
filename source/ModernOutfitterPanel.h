@@ -65,6 +65,7 @@ private:
 	void DrawFleet(const Rectangle &bounds);
 	void DrawCatalog(const Rectangle &bounds);
 	void DrawShipContext(const Rectangle &bounds);
+	void DrawPreviewComparison(const Rectangle &bounds);
 	void DrawControl(const Rectangle &bounds, const std::string &text, bool selected,
 		const std::function<void()> &action);
 	void DrawActions(const Rectangle &bounds);

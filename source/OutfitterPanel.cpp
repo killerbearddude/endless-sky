@@ -144,7 +144,18 @@ namespace {
 		double engineSpace = 0.;
 		double cargoSpace = 0.;
 		double mass = 0.;
+		double acceleration = 0.;
+		double turnRate = 0.;
+		map<string, double> attributes;
 	};
+
+	map<string, double> ShipAttributes(const Ship &ship)
+	{
+		map<string, double> values;
+		for(const auto &[name, value] : ship.Attributes())
+			values.emplace(name, value);
+		return values;
+	}
 
 	struct TransferState {
 		int64_t credits = 0;
@@ -187,7 +198,7 @@ namespace {
 				ship->HullLevel(), ship->EnergyLevel(), ship->FuelLevel(),
 				ship->Attributes().Get("outfit space"), ship->Attributes().Get("weapon capacity"),
 				ship->Attributes().Get("engine capacity"), ship->Attributes().Get("cargo space"),
-				ship->Mass()});
+				ship->Mass(), ship->Acceleration(), ship->TurnRate(), ShipAttributes(*ship)});
 		state.licenses = player.Licenses();
 		state.visited = player.VisitedSystems();
 		state.harvested = player.Harvested();
@@ -310,7 +321,10 @@ bool OutfitterPanel::MatchesTransferOutcome(const TransferPlan &plan) const
 				|| ship.Attributes().Get("weapon capacity") != effect.weaponSpaceAfter
 				|| ship.Attributes().Get("engine capacity") != effect.engineSpaceAfter
 				|| ship.Attributes().Get("cargo space") != effect.cargoSpaceAfter
-				|| ship.Mass() != effect.massAfter)
+				|| ship.Mass() != effect.massAfter
+				|| ship.Acceleration() != effect.accelerationAfter
+				|| ship.TurnRate() != effect.turnRateAfter
+				|| ShipAttributes(ship) != effect.attributesAfter)
 			return false;
 	}
 	for(const string &license : plan.licensesAdded)
@@ -515,7 +529,9 @@ OutfitterPanel::TransferPlan OutfitterPanel::PreviewMoveOutfit(OutfitLocation fr
 		plan.ships.push_back({index, ship->GivenName(), a.outfits, b.outfits, a.crew, b.crew,
 			a.shields, b.shields, a.hull, b.hull, a.energy, b.energy, a.fuel, b.fuel,
 			a.outfitSpace, b.outfitSpace, a.weaponSpace, b.weaponSpace,
-			a.engineSpace, b.engineSpace, a.cargoSpace, b.cargoSpace, a.mass, b.mass});
+			a.engineSpace, b.engineSpace, a.cargoSpace, b.cargoSpace, a.mass, b.mass,
+			a.acceleration, b.acceleration, a.turnRate, b.turnRate,
+			a.attributes, b.attributes});
 		auto Count = [this](const map<const Outfit *, int> &outfits) {
 			auto found = outfits.find(selectedOutfit);
 			return found == outfits.end() ? 0 : found->second;
@@ -557,7 +573,9 @@ OutfitterPanel::TransferPlan OutfitterPanel::PreviewMoveOutfit(OutfitLocation fr
 			|| ship.outfitSpaceBefore != ship.outfitSpaceAfter
 			|| ship.weaponSpaceBefore != ship.weaponSpaceAfter
 			|| ship.engineSpaceBefore != ship.engineSpaceAfter
-			|| ship.cargoSpaceBefore != ship.cargoSpaceAfter || ship.massBefore != ship.massAfter;
+			|| ship.cargoSpaceBefore != ship.cargoSpaceAfter || ship.massBefore != ship.massAfter
+			|| ship.accelerationBefore != ship.accelerationAfter || ship.turnRateBefore != ship.turnRateAfter
+			|| ship.attributesBefore != ship.attributesAfter;
 	return plan;
 }
 

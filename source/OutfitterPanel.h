@@ -88,6 +88,12 @@ public:
 		double cargoSpaceAfter = 0.;
 		double massBefore = 0.;
 		double massAfter = 0.;
+		double accelerationBefore = 0.;
+		double accelerationAfter = 0.;
+		double turnRateBefore = 0.;
+		double turnRateAfter = 0.;
+		std::map<std::string, double> attributesBefore;
+		std::map<std::string, double> attributesAfter;
 		bool operator==(const ShipEffect &) const = default;
 	};
 
